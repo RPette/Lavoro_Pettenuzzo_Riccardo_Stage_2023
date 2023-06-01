@@ -34,18 +34,22 @@ def Calculate_Width(x1, x2, y1, y2):
 def Calculate_Width_Cut(segment_center, height):
     x1, y1, x2, y2 = 0, 0, 0, 0
     
-    #find the coords of one dot adjacent to the cut
-    for i in range(height):
-        if thresh[segment_center-30, i] == 255 and thresh[segment_center-30, i+1] == 0:
-            x1 = i
-            y1 = segment_center-30
-            break
-    #find the coords of another dot adjacent to the cut
-    for i in range(height):
-        if thresh[segment_center+30, i] == 255 and thresh[segment_center+30, i+1] == 0:
-            x2 = i
-            y2 = segment_center+30
-            break
+    try:
+        #find the coords of one dot adjacent to the cut
+        for i in range(height):
+            if thresh[segment_center-30, i] == 255 and thresh[segment_center-30, i+1] == 0:
+                x1 = i
+                y1 = segment_center-30
+                break
+        #find the coords of another dot adjacent to the cut
+        for i in range(height):
+            if thresh[segment_center+30, i] == 255 and thresh[segment_center+30, i+1] == 0:
+                x2 = i
+                y2 = segment_center+30
+                break
+    except IndexError:
+        return -1
+    
 
     cv2.line(back_to_rgb, (x1, y1), (x2, y2), (0, 0,255), 2)
 
@@ -80,10 +84,15 @@ def Calculate_Width_Cut(segment_center, height):
 
 def Get_Width_Average():
     average = 0.0
-    for v in segments.values():
-        average = average + Calculate_Width_Cut(v, height)
+    for k, v in segments.items():
+        width_single_cut = Calculate_Width_Cut(v, height)
+        if width_single_cut == -1 and k <= 5:
+            return -1
+            #TODO when the code enters this if closure i need to rotate the image and then call again the method to get the average of the cut (hope this thing is easy to do)
+        else:
+            average = average + width_single_cut
         
-    return round(average / len(segments))
+    return (round(average / len(segments)))
 
 
 def Check_Horizontal_Cut(width, height):
@@ -100,7 +109,7 @@ def Check_Horizontal_Cut(width, height):
     return False
 
 
-image_path = r"C:\Users\stage.upe4\Downloads\cazzo.jpg"
+image_path = r"C:\Users\stage.upe4\Downloads\lastra_carta_routata.jpg"
 slab = cv2.imread(image_path)
 slab_grayscale = cv2.cvtColor(slab, cv2.COLOR_BGR2GRAY)
 ret, thresh = cv2.threshold(slab_grayscale, 100, 255, cv2.THRESH_BINARY)
@@ -114,12 +123,14 @@ width, height = thresh.shape
 
 segments = {
     0 : round(width/2),
-    1 : round((width/2)+80),
-    2 : round((width/2)+160),
-    3 : round((width/2)+240),
-    4 : round((width/2)-80),
-    5 : round((width/2)-160),
-    6 : round((width/2)-240)
+    1 : round((width)*.8),
+    2 : round((width)*.1),
+    3 : round((width)*.2),
+    4 : round((width)*.3),
+    5 : round((width)*.4),
+    6 : round((width)*.6),
+    7 : round((width)*.7),
+    8 : round((width)*.9)
 }
 
 if Check_Horizontal_Cut(width, height):
