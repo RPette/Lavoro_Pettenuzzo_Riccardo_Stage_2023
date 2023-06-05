@@ -1,24 +1,25 @@
-import cv2
-import numpy as np
-import flask
+import cv2 #lib for Computer Vision (opencv)
+import numpy as np #lib for math and calculus
+import flask #lib for web application
+import rawpy #lib to read raw files as .cr2
 
-
-def Calculate_M_Adjacent_Ray(x1, y1, x2, y2):
+#Calculate the angular coefficient(M) of the straight line adjacent to the cut given the coordinates of two points
+def Calculate_M_Adjacent_Line(x1, y1, x2, y2):
     return (y2 - y1)/(x2 - x1)
 
-
-def Calculate_M_Perpendicular_Ray(m):
+#Calculate the angular coefficient(M) of the vertical line given the angular coefficient(M) of another line
+def Calculate_M_Perpendicular_Line(m):
     return -1/m
 
-
+#Calculate the height(Q) of a line given his angular coefficient(M) and a point that belong the line
 def Calculate_Q(m, x, y):
     return round(np.negative((m*x)) + y)
 
-    
+#Calculate the center coordinates of a segment given his coordinates
 def Calculate_Segment_Mid_Coords(c1, c2):
     return round((c1 + c2) / 2)
 
-
+#Calculate the intersection point between to line give their angular coefficient(M) and their height(Q)
 def Calculate_Point_Intersection_Rays(m1, q1, m2, q2):
     q = np.negative(q1) + q2
     m = np.negative(m2) + m1
@@ -26,22 +27,25 @@ def Calculate_Point_Intersection_Rays(m1, q1, m2, q2):
     y = round((m2*x)+q2)
     return(x, y)
 
-
+#Calculate the width of the cut that's the length of the segment that is part of the vertical line that intersect the line adjacent to the cut
+#give the coords of the intersection point and the point on the opposite side of the cut
 def Calculate_Width(x1, x2, y1, y2):
-    return round(np.sqrt(pow((x2-x1), 2)+pow((y2-y1), 2)))
+    return np.sqrt(pow((x2-x1), 2)+pow((y2-y1), 2))
 
 
-def Calculate_Width_Cut(segment_center, height):
+#Using all the methods above calculate the width of the cut
+def Calculate_Width_Cut(segment_center, height, i):
     x1, y1, x2, y2 = 0, 0, 0, 0
     
+    #check if the cut is not vertical or oblique
     try:
-        #find the coords of one dot adjacent to the cut
+        #find the coords of one point adjacent to the cut
         for i in range(height):
             if thresh[segment_center-30, i] == 255 and thresh[segment_center-30, i+1] == 0:
                 x1 = i
                 y1 = segment_center-30
                 break
-        #find the coords of another dot adjacent to the cut
+        #find the coords of another point adjacent to the cut
         for i in range(height):
             if thresh[segment_center+30, i] == 255 and thresh[segment_center+30, i+1] == 0:
                 x2 = i
@@ -50,11 +54,13 @@ def Calculate_Width_Cut(segment_center, height):
     except IndexError:
         return -1
     
-
+    #draw the segment adjacent to the cut
     cv2.line(back_to_rgb, (x1, y1), (x2, y2), (0, 0,255), 2)
 
+    #get the mid coords and draw a small line to highlight the center of the segment
     x_mid = Calculate_Segment_Mid_Coords(x1, x2)
     y_mid = Calculate_Segment_Mid_Coords(y1, y2)
+    cv2.putText(back_to_rgb, str(i), (x_mid-40, y_mid), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 1, cv2.LINE_AA, False)
     cv2.line(back_to_rgb, (x_mid, y_mid), (x_mid-2, y_mid-2), (255, 0, 0), 2)
 
     x_opposite, y_opposite = 0, 0
@@ -67,11 +73,11 @@ def Calculate_Width_Cut(segment_center, height):
             break
     cv2.line(back_to_rgb, (x_opposite, y_opposite), (x_opposite+5, y_opposite+5), (0, 255, 0), 2)
 
-    #Calculating the width of the cut
+    #check if the cut is vertical then calculate the width of the cut adn return his width
     if x1 != x2:
-        m1 = Calculate_M_Adjacent_Ray(x1, y1, x2, y2)
+        m1 = Calculate_M_Adjacent_Line(x1, y1, x2, y2)
         q1 = Calculate_Q(m1, x1, y1)
-        m2 = Calculate_M_Perpendicular_Ray(m1)
+        m2 = Calculate_M_Perpendicular_Line(m1)
         q2 = Calculate_Q(m2, x_opposite, y_opposite)
         x_inters, y_inters = Calculate_Point_Intersection_Rays(m1, q1, m2, q2)
 
@@ -81,20 +87,7 @@ def Calculate_Width_Cut(segment_center, height):
         cv2.line(back_to_rgb, (x_mid, y_mid), (x_opposite, y_opposite), (0, 0, 255), 2)
         return x_opposite-x_mid
 
-
-def Get_Width_Average():
-    average = 0.0
-    for k, v in segments.items():
-        width_single_cut = Calculate_Width_Cut(v, height)
-        if width_single_cut == -1 and k <= 5:
-            return -1
-            #TODO when the code enters this if closure i need to rotate the image and then call again the method to get the average of the cut (hope this thing is easy to do)
-        else:
-            average = average + width_single_cut
-        
-    return (round(average / len(segments)))
-
-
+#Check if the cut is horizontal by iterating the height of the image and check if there'are black points that mean the cut not horizontal
 def Check_Horizontal_Cut(width, height):
     x1, y1 = -1, -1
     try:
@@ -108,42 +101,94 @@ def Check_Horizontal_Cut(width, height):
     
     return False
 
+#Iterate the process to get the width for all the height of cut to get more values and then better final value of width
+#if there are not enough values to get the final width the image will be rotated
+def Get_Width_Average():
+    average = 0.0
+    for k, v in segments.items():
+        width_segment = Calculate_Width_Cut(v, height, k)
+        print("Width Segment", width_segment, "px")
+        if width_segment == -1 and k <= 4:
+            return -1
+        average = average + width_segment
+        width_segment_list.append(width_segment)
+        
+    return average / len(segments)
 
-image_path = r"C:\Users\stage.upe4\Downloads\lastra_carta_routata.jpg"
-slab = cv2.imread(image_path)
-slab_grayscale = cv2.cvtColor(slab, cv2.COLOR_BGR2GRAY)
-ret, thresh = cv2.threshold(slab_grayscale, 100, 255, cv2.THRESH_BINARY)
-back_to_rgb = cv2.cvtColor(thresh, cv2.COLOR_GRAY2RGB)
+#Get the difference between the first value and the last of all widths
+def Get_Delta_Width():
+    return width_segment_list[0] - width_segment_list[-1]
+
+#Get the standard deviation from all the values of width of the cut
+def Get_Standard_Deviation():
+    return np.std(width_segment_list)
+
+
+
+image_path = r"C:\Users\stage.upe4\Downloads\raw\IMG_0002_1.cr2"
+
+#check if the file to read is jpg (or something else) cause raw files have different way to be read
+if image_path.split(".")[-1] == "jpg":
+    slab = cv2.imread(image_path)
+elif image_path.split(".")[-1] == "cr2":
+    raw = rawpy.imread(image_path) # access to the RAW image
+    rgb = raw.postprocess() # a numpy RGB array
+    slab = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+
+
+slab_grayscale = cv2.cvtColor(slab, cv2.COLOR_BGR2GRAY) #converting the image to grey scale
+ret, thresh = cv2.threshold(slab_grayscale, 100, 255, cv2.THRESH_BINARY) #filtering the image
+back_to_rgb = cv2.cvtColor(thresh, cv2.COLOR_GRAY2RGB) #converting the image to RGB
+width, height = thresh.shape #getting image's dimensions
 
 #fgbg = cv2.createBackgroundSubtractorMOG2()
 #fgmask = fgbg.apply(thresh)
 #can be useful when the image is not a piece of paper
 
-width, height = thresh.shape
+#define list of width to get Standard Deviation and Delta_Width
+width_segment_list = []
 
+#define the center of all segments that will be adjacent 
 segments = {
-    0 : round(width/2),
-    1 : round((width)*.8),
-    2 : round((width)*.1),
-    3 : round((width)*.2),
-    4 : round((width)*.3),
-    5 : round((width)*.4),
-    6 : round((width)*.6),
-    7 : round((width)*.7),
+    0 : round((width)*.1),
+    1 : round((width)*.2),
+    2 : round((width)*.3),
+    3 : round((width)*.4),
+    4 : round((width/2)),
+    5 : round((width)*.6),
+    6 : round((width)*.7),
+    7 : round((width)*.8),
     8 : round((width)*.9)
 }
 
+#Check if the cut is horizontal using the method then rotate the image and get his width
 if Check_Horizontal_Cut(width, height):
     print("Was Horizontal")
     image_rotated = cv2.rotate(slab, cv2.ROTATE_90_CLOCKWISE)
-    cv2.imwrite(image_path, image_rotated)
-    slab = cv2.imread(image_path)
-    slab_grayscale = cv2.cvtColor(slab, cv2.COLOR_BGR2GRAY)
+    slab_grayscale = cv2.cvtColor(image_rotated, cv2.COLOR_BGR2GRAY)
     ret, thresh = cv2.threshold(slab_grayscale, 100, 255, cv2.THRESH_BINARY)
     back_to_rgb = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
-    width, height = thresh.shape
-print("Width Average", Get_Width_Average(), "px")
+    width, height = thresh.shape[1], thresh.shape[0]
 
+width_average = Get_Width_Average()
+
+#if the average is not -1 it means that there were enough values to get the final width
+#if not the image will be rotated and the process to get all width values will restart
+if width_average == -1:
+    print("Was Horizontal")
+    image_rotated = cv2.rotate(slab, cv2.ROTATE_90_CLOCKWISE)
+    slab_grayscale = cv2.cvtColor(image_rotated, cv2.COLOR_BGR2GRAY)
+    ret, thresh = cv2.threshold(slab_grayscale, 100, 255, cv2.THRESH_BINARY)
+    back_to_rgb = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
+    width, height = thresh.shape[1], thresh.shape[0]
+    width_average = Get_Width_Average()
+
+#printing all necessary values
+print("Width Average", width_average, "px")
+print("Delta Width", Get_Delta_Width(), "px")
+print("Standard Deviation", Get_Standard_Deviation(), "px")
+
+#displaying the image with some values drawn
 cv2.imshow("Image", back_to_rgb)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
