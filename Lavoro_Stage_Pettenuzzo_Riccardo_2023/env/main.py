@@ -2,22 +2,28 @@ import cv2 #lib for Computer Vision (opencv)
 import numpy as np #lib for math and calculus
 import flask #lib for web application
 import rawpy #lib to read raw files as .cr2
+from matplotlib import pyplot as plt
+
 
 #Calculate the angular coefficient(M) of the straight line adjacent to the cut given the coordinates of two points
 def Calculate_M_Adjacent_Line(x1, y1, x2, y2):
     return (y2 - y1)/(x2 - x1)
 
+
 #Calculate the angular coefficient(M) of the vertical line given the angular coefficient(M) of another line
 def Calculate_M_Perpendicular_Line(m):
     return -1/m
+
 
 #Calculate the height(Q) of a line given his angular coefficient(M) and a point that belong the line
 def Calculate_Q(m, x, y):
     return round(np.negative((m*x)) + y)
 
+
 #Calculate the center coordinates of a segment given his coordinates
 def Calculate_Segment_Mid_Coords(c1, c2):
     return round((c1 + c2) / 2)
+
 
 #Calculate the intersection point between to line give their angular coefficient(M) and their height(Q)
 def Calculate_Point_Intersection_Rays(m1, q1, m2, q2):
@@ -26,6 +32,7 @@ def Calculate_Point_Intersection_Rays(m1, q1, m2, q2):
     x = round(q / m)
     y = round((m2*x)+q2)
     return(x, y)
+
 
 #Calculate the width of the cut that's the length of the segment that is part of the vertical line that intersect the line adjacent to the cut
 #give the coords of the intersection point and the point on the opposite side of the cut
@@ -80,12 +87,15 @@ def Calculate_Width_Cut(segment_center, height, i):
         m2 = Calculate_M_Perpendicular_Line(m1)
         q2 = Calculate_Q(m2, x_opposite, y_opposite)
         x_inters, y_inters = Calculate_Point_Intersection_Rays(m1, q1, m2, q2)
+        print(*Get_Outline_Cut_Not_Vertical(m2, q2, x_opposite, x_inters, slab_grayscale))
 
         cv2.line(back_to_rgb, (x_opposite, y_opposite), (x_inters, y_inters), (0, 0, 255), 2)
         return Calculate_Width(x_inters, x_opposite, y_inters, y_opposite)
     else:
         cv2.line(back_to_rgb, (x_mid, y_mid), (x_opposite, y_opposite), (0, 0, 255), 2)
+        print(*Get_Outline_Cut_Vertical(x_opposite, x_mid, y_opposite, slab_grayscale))
         return x_opposite-x_mid
+
 
 #Check if the cut is horizontal by iterating the height of the image and check if there'are black points that mean the cut not horizontal
 def Check_Horizontal_Cut(width, height):
@@ -101,6 +111,7 @@ def Check_Horizontal_Cut(width, height):
     
     return False
 
+
 #Iterate the process to get the width for all the height of cut to get more values and then better final value of width
 #if there are not enough values to get the final width the image will be rotated
 def Get_Width_Average():
@@ -115,20 +126,43 @@ def Get_Width_Average():
         
     return average / len(segments)
 
+
 #Get the difference between the first value and the last of all widths
 def Get_Delta_Width():
     return width_segment_list[0] - width_segment_list[-1]
+
 
 #Get the standard deviation from all the values of width of the cut
 def Get_Standard_Deviation():
     return np.std(width_segment_list)
 
 
+#Return a list o values that describe the outline/profile of the cut using the line the intersect the cut (y axis grey scale of the pixel,  x axis )
+def Get_Outline_Cut_Not_Vertical(m_segment, q_segment, x_opposite, x_inters, grayscale_image):
+    outline_values = []
+    for i in range(x_inters-20, x_opposite+20):
+        y = round((m_segment*i)+q_segment)
+        outline_values.append(grayscale_image[y, i])
+    plt.plot(outline_values, 'o-', color='blue', markersize=5)
+    plt.show()
+    return outline_values
 
-image_path = r"C:\Users\stage.upe4\Downloads\raw\IMG_0002_1.cr2"
+
+#This method do the same thing of the method above but when the segment is vertical
+def Get_Outline_Cut_Vertical(x_opposite, x_inters, height, grayscale_image):
+    outline_values = []
+    for i in range(x_inters-20, x_opposite+20):
+        outline_values.append(grayscale_image[height, i])
+    plt.plot(outline_values, 'o-', color='blue', markersize=5)
+    plt.show()
+    return outline_values
+
+
+
+image_path = r"C:\Users\stage.upe4\Downloads\PXL_20230606_151247055.jpg"
 
 #check if the file to read is jpg (or something else) cause raw files have different way to be read
-if image_path.split(".")[-1] == "jpg":
+if image_path.split(".")[-1] == "jpg":#if we need to read different type of image we can easy fix this by putting != "cr2"
     slab = cv2.imread(image_path)
 elif image_path.split(".")[-1] == "cr2":
     raw = rawpy.imread(image_path) # access to the RAW image
@@ -137,7 +171,9 @@ elif image_path.split(".")[-1] == "cr2":
 
 
 slab_grayscale = cv2.cvtColor(slab, cv2.COLOR_BGR2GRAY) #converting the image to grey scale
-ret, thresh = cv2.threshold(slab_grayscale, 100, 255, cv2.THRESH_BINARY) #filtering the image
+#slab_grayscale_blur = cv2.medianBlur(slab_grayscale, 15)
+ret, thresh = cv2.threshold(slab_grayscale, 70, 255, cv2.THRESH_BINARY) #filtering the image
+#thresh = cv2.adaptiveThreshold(slab_grayscale_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 199, 55)
 back_to_rgb = cv2.cvtColor(thresh, cv2.COLOR_GRAY2RGB) #converting the image to RGB
 width, height = thresh.shape #getting image's dimensions
 
@@ -187,6 +223,9 @@ if width_average == -1:
 print("Width Average", width_average, "px")
 print("Delta Width", Get_Delta_Width(), "px")
 print("Standard Deviation", Get_Standard_Deviation(), "px")
+#here finishes the first method to get width average, delta width and standard deviation
+
+#here start the second method to get width average, delta width and standard deviation
 
 #displaying the image with some values drawn
 cv2.imshow("Image", back_to_rgb)
