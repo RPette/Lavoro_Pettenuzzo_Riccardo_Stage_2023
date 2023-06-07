@@ -17,7 +17,7 @@ def Calculate_M_Perpendicular_Line(m):
 
 #Calculate the height(Q) of a line given his angular coefficient(M) and a point that belong the line
 def Calculate_Q(m, x, y):
-    return round(np.negative((m*x)) + y)
+    return np.negative((m*x)) + y
 
 
 #Calculate the center coordinates of a segment given his coordinates
@@ -85,7 +85,9 @@ def Calculate_Width_Cut(segment_center, height, i):
         m1 = Calculate_M_Adjacent_Line(x1, y1, x2, y2)
         q1 = Calculate_Q(m1, x1, y1)
         m2 = Calculate_M_Perpendicular_Line(m1)
+        angular_coefficient_list.append(m2)
         q2 = Calculate_Q(m2, x_opposite, y_opposite)
+        quote_list.append(q2)
         x_inters, y_inters = Calculate_Point_Intersection_Rays(m1, q1, m2, q2)
         print(*Get_Outline_Cut_Not_Vertical(m2, q2, x_opposite, x_inters, slab_grayscale))
 
@@ -143,7 +145,7 @@ def Get_Outline_Cut_Not_Vertical(m_segment, q_segment, x_opposite, x_inters, gra
     for i in range(x_inters-20, x_opposite+20):
         y = round((m_segment*i)+q_segment)
         outline_values.append(grayscale_image[y, i])
-    plt.plot(outline_values, 'o-', color='blue', markersize=5)
+    plt.plot(outline_values, 'o-', color='blue', markersize=4)
     plt.show()
     return outline_values
 
@@ -153,13 +155,13 @@ def Get_Outline_Cut_Vertical(x_opposite, x_inters, height, grayscale_image):
     outline_values = []
     for i in range(x_inters-20, x_opposite+20):
         outline_values.append(grayscale_image[height, i])
-    plt.plot(outline_values, 'o-', color='blue', markersize=5)
+    plt.plot(outline_values, 'o-', color='blue', markersize=4)
     plt.show()
     return outline_values
 
 
 
-image_path = r"C:\Users\stage.upe4\Downloads\PXL_20230606_151247055.jpg"
+image_path = r"C:\Users\stage.upe4\Downloads\lastra_vera_cropped_ob.jpg"
 
 #check if the file to read is jpg (or something else) cause raw files have different way to be read
 if image_path.split(".")[-1] == "jpg":#if we need to read different type of image we can easy fix this by putting != "cr2"
@@ -171,17 +173,16 @@ elif image_path.split(".")[-1] == "cr2":
 
 
 slab_grayscale = cv2.cvtColor(slab, cv2.COLOR_BGR2GRAY) #converting the image to grey scale
-#slab_grayscale_blur = cv2.medianBlur(slab_grayscale, 15)
-ret, thresh = cv2.threshold(slab_grayscale, 70, 255, cv2.THRESH_BINARY) #filtering the image
-#thresh = cv2.adaptiveThreshold(slab_grayscale_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 199, 55)
+slab_grayscale_blur = cv2.GaussianBlur(slab_grayscale, (19, 19), 0)
+#ret, thresh = cv2.threshold(slab_grayscale, 68, 255, cv2.THRESH_BINARY) #filtering the image
+thresh = cv2.adaptiveThreshold(slab_grayscale_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 199, 55)
 back_to_rgb = cv2.cvtColor(thresh, cv2.COLOR_GRAY2RGB) #converting the image to RGB
 width, height = thresh.shape #getting image's dimensions
 
-#fgbg = cv2.createBackgroundSubtractorMOG2()
-#fgmask = fgbg.apply(thresh)
-#can be useful when the image is not a piece of paper
-
 #define list of width to get Standard Deviation and Delta_Width
+
+angular_coefficient_list = []
+quote_list = []
 width_segment_list = []
 
 #define the center of all segments that will be adjacent 
@@ -226,6 +227,27 @@ print("Standard Deviation", Get_Standard_Deviation(), "px")
 #here finishes the first method to get width average, delta width and standard deviation
 
 #here start the second method to get width average, delta width and standard deviation
+grayscale_pixel_value = []
+
+x_coords = []
+y_coords = []
+
+m_averaged = np.average(angular_coefficient_list)
+q_averaged = np.average(quote_list)
+
+for i in range(height):
+    y = round((m_averaged*i)+q_averaged)
+    try:
+        grayscale_pixel_value.append(slab_grayscale[y, i])
+        x_coords.append(i)
+        y_coords.append(y)
+    except Exception:
+        print("Out of Bounds")
+        
+cv2.line(back_to_rgb, (x_coords[0], y_coords[0]), (x_coords[-1], y_coords[-1]), (0, 255, 0), 2)  
+print(*grayscale_pixel_value)
+plt.plot(grayscale_pixel_value, 'o-', color='green', markersize=4)
+plt.show()
 
 #displaying the image with some values drawn
 cv2.imshow("Image", back_to_rgb)
