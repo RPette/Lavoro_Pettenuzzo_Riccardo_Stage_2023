@@ -78,7 +78,7 @@ def Calculate_Width_Cut(segment_center, height, i):
             x_opposite = i
             y_opposite = y_mid
             break
-    cv2.line(back_to_rgb, (x_opposite, y_opposite), (x_opposite+5, y_opposite+5), (0, 255, 0), 2)
+    cv2.line(back_to_rgb, (x_opposite, y_opposite), (x_opposite+5, y_opposite), (0, 255, 0), 2)
 
     #check if the cut is vertical then calculate the width of the cut adn return his width
     if x1 != x2:
@@ -89,13 +89,13 @@ def Calculate_Width_Cut(segment_center, height, i):
         q2 = Calculate_Q(m2, x_opposite, y_opposite)
         quote_list.append(q2)
         x_inters, y_inters = Calculate_Point_Intersection_Rays(m1, q1, m2, q2)
-        print(*Get_Outline_Cut_Not_Vertical(m2, q2, x_opposite, x_inters, slab_grayscale))
+        #print(*Get_Outline_Cut_Not_Vertical(m2, q2, x_opposite, x_inters, slab_grayscale))
 
         cv2.line(back_to_rgb, (x_opposite, y_opposite), (x_inters, y_inters), (0, 0, 255), 2)
         return Calculate_Width(x_inters, x_opposite, y_inters, y_opposite)
     else:
         cv2.line(back_to_rgb, (x_mid, y_mid), (x_opposite, y_opposite), (0, 0, 255), 2)
-        print(*Get_Outline_Cut_Vertical(x_opposite, x_mid, y_opposite, slab_grayscale))
+        #print(*Get_Outline_Cut_Vertical(x_opposite, x_mid, y_opposite, slab_grayscale))
         return x_opposite-x_mid
 
 
@@ -118,7 +118,7 @@ def Check_Horizontal_Cut(width, height):
 #if there are not enough values to get the final width the image will be rotated
 def Get_Width_Average():
     average = 0.0
-    for k, v in segments.items():
+    for k, v in segments_width.items():
         width_segment = Calculate_Width_Cut(v, height, k)
         print("Width Segment", width_segment, "px")
         if width_segment == -1 and k <= 4:
@@ -126,7 +126,7 @@ def Get_Width_Average():
         average = average + width_segment
         width_segment_list.append(width_segment)
         
-    return average / len(segments)
+    return average / len(segments_width)
 
 
 #Get the difference between the first value and the last of all widths
@@ -137,27 +137,6 @@ def Get_Delta_Width():
 #Get the standard deviation from all the values of width of the cut
 def Get_Standard_Deviation():
     return np.std(width_segment_list)
-
-
-#Return a list o values that describe the outline/profile of the cut using the line the intersect the cut (y axis grey scale of the pixel,  x axis )
-def Get_Outline_Cut_Not_Vertical(m_segment, q_segment, x_opposite, x_inters, grayscale_image):
-    outline_values = []
-    for i in range(x_inters-20, x_opposite+20):
-        y = round((m_segment*i)+q_segment)
-        outline_values.append(grayscale_image[y, i])
-    plt.plot(outline_values, 'o-', color='blue', markersize=4)
-    plt.show()
-    return outline_values
-
-
-#This method do the same thing of the method above but when the segment is vertical
-def Get_Outline_Cut_Vertical(x_opposite, x_inters, height, grayscale_image):
-    outline_values = []
-    for i in range(x_inters-20, x_opposite+20):
-        outline_values.append(grayscale_image[height, i])
-    plt.plot(outline_values, 'o-', color='blue', markersize=4)
-    plt.show()
-    return outline_values
 
 
 
@@ -186,21 +165,21 @@ quote_list = []
 width_segment_list = []
 
 #define the center of all segments that will be adjacent 
-segments = {
-    0 : round((width)*.1),
-    1 : round((width)*.2),
-    2 : round((width)*.3),
-    3 : round((width)*.4),
-    4 : round((width/2)),
-    5 : round((width)*.6),
-    6 : round((width)*.7),
-    7 : round((width)*.8),
-    8 : round((width)*.9)
+segments_width = {
+    1 : round((width)*.1),
+    2 : round((width)*.2),
+    3 : round((width)*.3),
+    4 : round((width)*.4),
+    5 : round((width/2)),
+    6 : round((width)*.6),
+    7 : round((width)*.7),
+    8 : round((width)*.8),
+    9 : round((width)*.9),
 }
 
 #Check if the cut is horizontal using the method then rotate the image and get his width
 if Check_Horizontal_Cut(width, height):
-    print("Was Horizontal")
+    print("Was Horizontal, then rotated")
     image_rotated = cv2.rotate(slab, cv2.ROTATE_90_CLOCKWISE)
     slab_grayscale = cv2.cvtColor(image_rotated, cv2.COLOR_BGR2GRAY)
     ret, thresh = cv2.threshold(slab_grayscale, 100, 255, cv2.THRESH_BINARY)
@@ -212,7 +191,7 @@ width_average = Get_Width_Average()
 #if the average is not -1 it means that there were enough values to get the final width
 #if not the image will be rotated and the process to get all width values will restart
 if width_average == -1:
-    print("Was Horizontal")
+    print("Not enough points to calculate width, then rotated")
     image_rotated = cv2.rotate(slab, cv2.ROTATE_90_CLOCKWISE)
     slab_grayscale = cv2.cvtColor(image_rotated, cv2.COLOR_BGR2GRAY)
     ret, thresh = cv2.threshold(slab_grayscale, 100, 255, cv2.THRESH_BINARY)
@@ -227,29 +206,106 @@ print("Standard Deviation", Get_Standard_Deviation(), "px")
 #here finishes the first method to get width average, delta width and standard deviation
 
 #here start the second method to get width average, delta width and standard deviation
+m_averaged = np.average(angular_coefficient_list)
+q_averaged = np.average(quote_list)
+
+segments_width2 = {
+    0 : round((width/2)),
+    1 : round((width)*.4),
+    2 : round((width)*.3),
+    3 : round((width)*.2),
+    4 : round((width)*.1),
+    5 : round((width)*.01),
+    6 : round((width)*-.1),
+    7 : round((width)*-.2),
+    8 : round((width)*-.3),
+    9 : round((width)*-.4),
+    10 : round(-(width/2)),
+}
+
+outline_info = {
+    0 : [],
+    1 : [],
+    2 : [],
+    3 : [],
+    4 : [],
+    5 : [],
+    6 : [],
+    7 : [],
+    8 : [],
+    9 : [],
+    10 : [],
+}
+
 grayscale_pixel_value = []
 
 x_coords = []
 y_coords = []
 
-m_averaged = np.average(angular_coefficient_list)
-q_averaged = np.average(quote_list)
+back_to_rgb2 = cv2.cvtColor(slab_grayscale, cv2.COLOR_GRAY2RGB)
 
-for i in range(height):
-    y = round((m_averaged*i)+q_averaged)
+#this "method" shows the outline for all the width of the image and then draw a line that displays on the image where the outline pass
+for k, v in segments_width2.items():
+    grayscale_pixel_value=[]
+    x_coords=[]
+    y_coords=[]
+    for i in range(height):
+        y = round((m_averaged*i)+q_averaged)
+        if y-v > 0:
+            try:
+                grayscale_pixel_value.append(slab_grayscale[y-v, i])
+            except Exception as e:
+                print(e)
+            else:
+                x_coords.append(i)
+                y_coords.append(y-v)
     try:
-        grayscale_pixel_value.append(slab_grayscale[y, i])
-        x_coords.append(i)
-        y_coords.append(y)
-    except Exception:
-        print("Out of Bounds")
+        cv2.line(back_to_rgb2, (x_coords[0], y_coords[0]), (x_coords[-1], y_coords[-1]), (255, 0, 255), 2)
+        plt.plot(grayscale_pixel_value, 'o-', color='green', markersize=4)
+        mng = plt.get_current_fig_manager()
+        mng.resize(1700, 700)
+        plt.show()
+    except IndexError as ie:
+        print(ie)
+    else:
+        outline_info[k].append(grayscale_pixel_value)
+        outline_info[k].append(x_coords)
+        outline_info[k].append(y_coords)
+
+new_grayscale_pixel_values = []
+
+values_to_approx = []
+start_index = 0
+finish_index = 0
+starting_or_finishing = True
         
-cv2.line(back_to_rgb, (x_coords[0], y_coords[0]), (x_coords[-1], y_coords[-1]), (0, 255, 0), 2)  
-print(*grayscale_pixel_value)
-plt.plot(grayscale_pixel_value, 'o-', color='green', markersize=4)
+for i in range(len(outline_info[0][1])):
+    try:
+        if np.positive(outline_info[0][0][i] - outline_info[0][0][i+1]) <= 40:
+            values_to_approx.append(outline_info[0][0][i])
+            if starting_or_finishing:
+                start_index = i
+                starting_or_finishing = not starting_or_finishing
+        else:
+            if not starting_or_finishing:
+                finish_index = i
+                starting_or_finishing = not starting_or_finishing
+                approx_grayscale_value = np.average(values_to_approx)
+                for j in range(start_index, finish_index):
+                    new_grayscale_pixel_values.insert(j, approx_grayscale_value)
+            else:
+                new_grayscale_pixel_values.insert(i, outline_info[0][0][i])
+    except IndexError as ie:
+        print(ie)
+    
+            
+
+plt.plot(new_grayscale_pixel_values, 'o-', color='green', markersize=4)
+mng = plt.get_current_fig_manager()
+mng.resize(1700, 700)
 plt.show()
 
 #displaying the image with some values drawn
-cv2.imshow("Image", back_to_rgb)
+cv2.imshow("Image", back_to_rgb2)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
