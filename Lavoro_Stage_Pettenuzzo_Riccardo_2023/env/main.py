@@ -140,7 +140,7 @@ def Get_Standard_Deviation():
 
 
 
-image_path = r"C:\Users\stage.upe4\Downloads\lastra_vera_cropped_ob.jpg"
+image_path = r"C:\Users\stage.upe4\Desktop\Stefano\grigia_ob_resized.jpg"
 
 #check if the file to read is jpg (or something else) cause raw files have different way to be read
 if image_path.split(".")[-1] == "jpg":#if we need to read different type of image we can easy fix this by putting != "cr2"
@@ -152,9 +152,11 @@ elif image_path.split(".")[-1] == "cr2":
 
 
 slab_grayscale = cv2.cvtColor(slab, cv2.COLOR_BGR2GRAY) #converting the image to grey scale
-slab_grayscale_blur = cv2.GaussianBlur(slab_grayscale, (19, 19), 0)
-#ret, thresh = cv2.threshold(slab_grayscale, 68, 255, cv2.THRESH_BINARY) #filtering the image
-thresh = cv2.adaptiveThreshold(slab_grayscale_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 199, 55)
+#slab_grayscale_blur = cv2.GaussianBlur(slab_grayscale, (19, 19), 0)
+slab_grayscale_blur = cv2.medianBlur(slab_grayscale, 19)
+#grigia = 50, rossa = 40
+ret, thresh = cv2.threshold(slab_grayscale_blur, 50, 255, cv2.THRESH_BINARY) #filtering the image 
+#thresh = cv2.adaptiveThreshold(slab_grayscale_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 199, 5)
 back_to_rgb = cv2.cvtColor(thresh, cv2.COLOR_GRAY2RGB) #converting the image to RGB
 width, height = thresh.shape #getting image's dimensions
 
@@ -200,9 +202,7 @@ if width_average == -1:
     width_average = Get_Width_Average()
 
 #printing all necessary values
-print("Width Average", width_average, "px")
-print("Delta Width", Get_Delta_Width(), "px")
-print("Standard Deviation", Get_Standard_Deviation(), "px")
+
 #here finishes the first method to get width average, delta width and standard deviation
 
 #here start the second method to get width average, delta width and standard deviation
@@ -224,6 +224,20 @@ segments_width2 = {
 }
 
 outline_info = {
+    0 : [],
+    1 : [],
+    2 : [],
+    3 : [],
+    4 : [],
+    5 : [],
+    6 : [],
+    7 : [],
+    8 : [],
+    9 : [],
+    10 : [],
+}
+
+outline_info_approx = {
     0 : [],
     1 : [],
     2 : [],
@@ -261,10 +275,6 @@ for k, v in segments_width2.items():
                 y_coords.append(y-v)
     try:
         cv2.line(back_to_rgb2, (x_coords[0], y_coords[0]), (x_coords[-1], y_coords[-1]), (255, 0, 255), 2)
-        plt.plot(grayscale_pixel_value, 'o-', color='green', markersize=4)
-        mng = plt.get_current_fig_manager()
-        mng.resize(1700, 700)
-        plt.show()
     except IndexError as ie:
         print(ie)
     else:
@@ -272,40 +282,100 @@ for k, v in segments_width2.items():
         outline_info[k].append(x_coords)
         outline_info[k].append(y_coords)
 
-new_grayscale_pixel_values = []
-
-values_to_approx = []
-start_index = 0
-finish_index = 0
-starting_or_finishing = True
-        
-for i in range(len(outline_info[0][1])):
+#this method approximate the profile where the values in grayscale is high and if the difference between the value in that index and the next index is lower than a constant
+#it means that this value can be approximated with others and we obtain a profile with simplified values where it's not necessary to calculate width
+for k, v in outline_info.items():
     try:
-        if np.positive(outline_info[0][0][i] - outline_info[0][0][i+1]) <= 40:
-            values_to_approx.append(outline_info[0][0][i])
-            if starting_or_finishing:
-                start_index = i
-                starting_or_finishing = not starting_or_finishing
-        else:
-            if not starting_or_finishing:
-                finish_index = i
-                starting_or_finishing = not starting_or_finishing
-                approx_grayscale_value = np.average(values_to_approx)
-                for j in range(start_index, finish_index):
-                    new_grayscale_pixel_values.insert(j, approx_grayscale_value)
-            else:
-                new_grayscale_pixel_values.insert(i, outline_info[0][0][i])
+        outline = v[0]
+        x_coords2 = v[1]
     except IndexError as ie:
         print(ie)
+    else:
+        new_grayscale_pixel_values = []
+        x_coords_approx = []
+        values_to_approx = []
+        start_index = 0
+        finish_index = 0
+        starting_or_finishing = True
+        for i in range(len(x_coords2)+1):
+            x_coords_approx.append(i)
+            try:
+                if np.positive(outline[i] - outline[i+1]) <= 40 and outline[i] >= 75:
+                    values_to_approx.append(outline[i])
+                    if starting_or_finishing:
+                        start_index = i
+                        starting_or_finishing = not starting_or_finishing
+                elif starting_or_finishing:
+                    new_grayscale_pixel_values.insert(i, outline[i])
+                else:
+                    finish_index = i
+                    starting_or_finishing = not starting_or_finishing
+                    approx_grayscale_value = round(np.average(values_to_approx))
+                    for j in range(start_index, finish_index+1):
+                        new_grayscale_pixel_values.insert(j, approx_grayscale_value)
+            except IndexError as ie:
+                print(ie)
     
-            
+    outline_info_approx[k].append(new_grayscale_pixel_values)
+    outline_info_approx[k].append(x_coords_approx)
 
-plt.plot(new_grayscale_pixel_values, 'o-', color='green', markersize=4)
-mng = plt.get_current_fig_manager()
-mng.resize(1700, 700)
-plt.show()
+print(*new_grayscale_pixel_values)
+#this method plot the first profile and the last to see the difference
+for k in outline_info:
+    try:
+        plt.plot(outline_info[k][0], '*-', color='purple', markersize=6)
+        plt.plot(outline_info[10][0], 'o-', color='blue', markersize=4)
+        mng = plt.get_current_fig_manager()
+        mng.resize(1700, 700)
+        mng.set_window_title(str(k))
+        plt.show()
+    except Exception as e:
+        print(e)
+    else:
+        break
+
+#this method take the grayscale values, and their coords that were not approximated and goes back and take some values before and after the largest ray of low values
+#than check where the value before and after take the average of the lowest values and get the coords where the value is at least 30 in grayscale higher 
+#than get the width between those points
+for k, v in outline_info_approx.items():
+    try:
+        outline_approx = v[0]
+        x_coords3 = v[1]
+        outline_final = []
+        for i in range(len(v[1])+1):
+            if outline_approx[i] >= 130:
+                outline_final.insert(i, -1)
+            else:
+                outline_final.insert(i, outline_approx[i])
+    except Exception as e:
+        print(e)
+    
+    print(*outline_final)
+    outline_lower_values_width = []
+    start_finish = True
+    width_number = 0
+    for i in range(len(outline_final)+1):
+        try:
+            if outline_final[i] != -1:
+                for i in range(i, len(outline_final)+1):
+                    if outline_final[i] != -1:
+                        width_number += 1
+                    else: 
+                        break
+        except Exception as e:
+            print(e)
+        else:
+            outline_lower_values_width.append(width_number)
+            width_number = 0
+        
+    
+    print(*outline_lower_values_width)
 
 #displaying the image with some values drawn
-cv2.imshow("Image", back_to_rgb2)
+print("Width Average", width_average, "px")
+print("Delta Width", Get_Delta_Width(), "px")
+print("Standard Deviation", Get_Standard_Deviation(), "px")
+cv2.imshow("Image 2° method", back_to_rgb2)
+cv2.imshow("Image 1° method", back_to_rgb)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
