@@ -2,7 +2,7 @@ import cv2 #lib for Computer Vision (opencv)
 import numpy as np #lib for math and calculus
 import flask #lib for web application
 import rawpy #lib to read raw files as .cr2
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt 
 
 
 #Calculate the angular coefficient(M) of the straight line adjacent to the cut given the coordinates of two points
@@ -140,7 +140,7 @@ def Get_Standard_Deviation():
 
 
 
-image_path = r"C:\Users\stage.upe4\Desktop\Stefano\grigia_ob_resized.jpg"
+image_path = r"C:\Users\stage.upe4\Desktop\Stefano\rossa_ob_resized.jpg"
 
 #check if the file to read is jpg (or something else) cause raw files have different way to be read
 if image_path.split(".")[-1] == "jpg":#if we need to read different type of image we can easy fix this by putting != "cr2"
@@ -155,7 +155,7 @@ slab_grayscale = cv2.cvtColor(slab, cv2.COLOR_BGR2GRAY) #converting the image to
 #slab_grayscale_blur = cv2.GaussianBlur(slab_grayscale, (19, 19), 0)
 slab_grayscale_blur = cv2.medianBlur(slab_grayscale, 19)
 #grigia = 50, rossa = 40
-ret, thresh = cv2.threshold(slab_grayscale_blur, 50, 255, cv2.THRESH_BINARY) #filtering the image 
+ret, thresh = cv2.threshold(slab_grayscale_blur, 40, 255, cv2.THRESH_BINARY) #filtering the image 
 #thresh = cv2.adaptiveThreshold(slab_grayscale_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 199, 5)
 back_to_rgb = cv2.cvtColor(thresh, cv2.COLOR_GRAY2RGB) #converting the image to RGB
 width, height = thresh.shape #getting image's dimensions
@@ -300,7 +300,7 @@ for k, v in outline_info.items():
         for i in range(len(x_coords2)+1):
             x_coords_approx.append(i)
             try:
-                if np.positive(outline[i] - outline[i+1]) <= 40 and outline[i] >= 75:
+                if np.positive(outline[i] - outline[i+1]) <= 40 and outline[i] >= 100:
                     values_to_approx.append(outline[i])
                     if starting_or_finishing:
                         start_index = i
@@ -312,14 +312,84 @@ for k, v in outline_info.items():
                     starting_or_finishing = not starting_or_finishing
                     approx_grayscale_value = round(np.average(values_to_approx))
                     for j in range(start_index, finish_index+1):
-                        new_grayscale_pixel_values.insert(j, approx_grayscale_value)
+                        if len(values_to_approx) >= 3:
+                            #new_grayscale_pixel_values.insert(j, approx_grayscale_value)
+                            new_grayscale_pixel_values.insert(j, -1)
+                        else:
+                            new_grayscale_pixel_values.insert(j, outline[j])
             except IndexError as ie:
                 print(ie)
-    
+    print(*new_grayscale_pixel_values)            
     outline_info_approx[k].append(new_grayscale_pixel_values)
     outline_info_approx[k].append(x_coords_approx)
 
-print(*new_grayscale_pixel_values)
+
+outline_spikes_coords = {
+}
+
+
+length_lowest_part = {
+    0 : [],
+    1 : [],
+    2 : [],
+    3 : [],
+    4 : [],
+    5 : [],
+    6 : [],
+    7 : [],
+    8 : [],
+    9 : [],
+    10 : [],
+}
+
+
+#print(*new_grayscale_pixel_values)
+for k, v in outline_info_approx.items():
+    try:
+        outline_approx = v[0]
+        start_index = 0 
+        finish_index = 0
+        started_finished = False
+        outline_lowest_spikes = []
+    except Exception as e:
+        print(e)
+    else:
+        for i in range(len(outline_approx)+1):
+            try:
+                if (outline_approx[i] != -1 and outline_approx[i+1] == -1) and started_finished:
+                    finish_index = i
+                    started_finished = not started_finished
+                    outline_spikes_coords[k, i] = [start_index+1, finish_index, finish_index-start_index]
+                    length_lowest_part[k].append((finish_index-start_index))
+                    start_index = 0
+                    finish_index = 0
+                elif (outline_approx[i] == -1 and outline_approx[i+1] != -1) and not started_finished:
+                    start_index = i
+                    started_finished = not started_finished
+            except IndexError as ie:
+                print(ie)
+        
+        length_lowest_part[k].sort(reverse=True)
+        
+for k, v in length_lowest_part.items():
+    longest_width = v[0]
+    longest_width_start = -1
+    longest_width_finish = -1
+    deepest_spike_values = []
+    for l, m in outline_spikes_coords.items():
+        if l[0] == k and m[2] == longest_width:
+            longest_width_start = m[0]
+            longest_width_finish = m[1]
+            break
+    for i in range(longest_width_start, longest_width_finish+1):
+        deepest_spike_values.append(outline_info_approx[k][0][i])
+    
+    plt.plot(deepest_spike_values, 'o-', color='blue', markersize=4)
+    mng = plt.get_current_fig_manager()
+    mng.resize(1700, 700)
+    mng.set_window_title(str(k))
+    plt.show()
+
 #this method plot the first profile and the last to see the difference
 for k in outline_info:
     try:
@@ -337,6 +407,7 @@ for k in outline_info:
 #this method take the grayscale values, and their coords that were not approximated and goes back and take some values before and after the largest ray of low values
 #than check where the value before and after take the average of the lowest values and get the coords where the value is at least 30 in grayscale higher 
 #than get the width between those points
+"""
 for k, v in outline_info_approx.items():
     try:
         outline_approx = v[0]
@@ -352,7 +423,6 @@ for k, v in outline_info_approx.items():
     
     print(*outline_final)
     outline_lower_values_width = []
-    start_finish = True
     width_number = 0
     for i in range(len(outline_final)+1):
         try:
@@ -370,6 +440,8 @@ for k, v in outline_info_approx.items():
         
     
     print(*outline_lower_values_width)
+"""
+
 
 #displaying the image with some values drawn
 print("Width Average", width_average, "px")
