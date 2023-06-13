@@ -130,17 +130,18 @@ def Get_Width_Average():
 
 
 #Get the difference between the first value and the last of all widths
-def Get_Delta_Width():
-    return width_segment_list[0] - width_segment_list[-1]
+def Get_Delta_Width(width_list):
+    return width_list[0] - width_list[-1]
 
 
 #Get the standard deviation from all the values of width of the cut
-def Get_Standard_Deviation():
-    return np.std(width_segment_list)
+def Get_Standard_Deviation(width_list):
+    return np.std(width_list)
 
 
 
-image_path = r"C:\Users\stage.upe4\Desktop\Stefano\rossa_ob_resized.jpg"
+# sourcery skip: list-comprehension, move-assign-in-block, remove-dict-keys, use-dict-items
+image_path = r"C:\Users\stage.upe4\Desktop\Stefano\grigia_ob_resized.jpg"
 
 #check if the file to read is jpg (or something else) cause raw files have different way to be read
 if image_path.split(".")[-1] == "jpg":#if we need to read different type of image we can easy fix this by putting != "cr2"
@@ -155,7 +156,7 @@ slab_grayscale = cv2.cvtColor(slab, cv2.COLOR_BGR2GRAY) #converting the image to
 #slab_grayscale_blur = cv2.GaussianBlur(slab_grayscale, (19, 19), 0)
 slab_grayscale_blur = cv2.medianBlur(slab_grayscale, 19)
 #grigia = 50, rossa = 40
-ret, thresh = cv2.threshold(slab_grayscale_blur, 40, 255, cv2.THRESH_BINARY) #filtering the image 
+ret, thresh = cv2.threshold(slab_grayscale_blur, 50, 255, cv2.THRESH_BINARY) #filtering the image 
 #thresh = cv2.adaptiveThreshold(slab_grayscale_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 199, 5)
 back_to_rgb = cv2.cvtColor(thresh, cv2.COLOR_GRAY2RGB) #converting the image to RGB
 width, height = thresh.shape #getting image's dimensions
@@ -251,10 +252,44 @@ outline_info_approx = {
     10 : [],
 }
 
-grayscale_pixel_value = []
+outline_spikes_infos = {
+}
 
+
+length_lowest_part = {
+    0 : [],
+    1 : [],
+    2 : [],
+    3 : [],
+    4 : [],
+    5 : [],
+    6 : [],
+    7 : [],
+    8 : [],
+    9 : [],
+    10 : [],
+}
+
+outline_on_the_cut = {
+    0 : [],
+    1 : [],
+    2 : [],
+    3 : [],
+    4 : [],
+    5 : [],
+    6 : [],
+    7 : [],
+    8 : [],
+    9 : [],
+    10 : [],
+}
+
+grayscale_pixel_value = []
+width_lowest_part_average = []
+width_half_height_average = []
 x_coords = []
 y_coords = []
+half_height = -1
 
 back_to_rgb2 = cv2.cvtColor(slab_grayscale, cv2.COLOR_GRAY2RGB)
 
@@ -288,15 +323,15 @@ for k, v in outline_info.items():
     try:
         outline = v[0]
         x_coords2 = v[1]
-    except IndexError as ie:
-        print(ie)
-    else:
         new_grayscale_pixel_values = []
         x_coords_approx = []
         values_to_approx = []
         start_index = 0
         finish_index = 0
         starting_or_finishing = True
+    except IndexError as ie:
+        print(ie)
+    else:
         for i in range(len(x_coords2)+1):
             x_coords_approx.append(i)
             try:
@@ -313,37 +348,18 @@ for k, v in outline_info.items():
                     approx_grayscale_value = round(np.average(values_to_approx))
                     for j in range(start_index, finish_index+1):
                         if len(values_to_approx) >= 3:
-                            #new_grayscale_pixel_values.insert(j, approx_grayscale_value)
                             new_grayscale_pixel_values.insert(j, -1)
                         else:
                             new_grayscale_pixel_values.insert(j, outline[j])
             except IndexError as ie:
-                print(ie)
-    print(*new_grayscale_pixel_values)            
-    outline_info_approx[k].append(new_grayscale_pixel_values)
-    outline_info_approx[k].append(x_coords_approx)
+                print(ie)         
+        outline_info_approx[k].append(new_grayscale_pixel_values)
+        outline_info_approx[k].append(x_coords_approx)
 
-
-outline_spikes_coords = {
-}
-
-
-length_lowest_part = {
-    0 : [],
-    1 : [],
-    2 : [],
-    3 : [],
-    4 : [],
-    5 : [],
-    6 : [],
-    7 : [],
-    8 : [],
-    9 : [],
-    10 : [],
-}
-
-
-#print(*new_grayscale_pixel_values)
+#this method takes alle the approximated lists of grayscale pixel and take all the start and finish index where the line where not approximated
+#it associate the starting index, the finish index and the length where the values are low, then it appends to another list the lengths and calculate the higher for every line
+#than it searches where the length is higher and take the starting index and the finish index, then it displays a plot for every line
+#When I have the pixel where the length is higher and start and finish index, i've to take some values before and after the indexes to get a better view of the outline
 for k, v in outline_info_approx.items():
     try:
         outline_approx = v[0]
@@ -351,7 +367,7 @@ for k, v in outline_info_approx.items():
         finish_index = 0
         started_finished = False
         outline_lowest_spikes = []
-    except Exception as e:
+    except IndexError as e:
         print(e)
     else:
         for i in range(len(outline_approx)+1):
@@ -359,7 +375,7 @@ for k, v in outline_info_approx.items():
                 if (outline_approx[i] != -1 and outline_approx[i+1] == -1) and started_finished:
                     finish_index = i
                     started_finished = not started_finished
-                    outline_spikes_coords[k, i] = [start_index+1, finish_index, finish_index-start_index]
+                    outline_spikes_infos[k, i] = [start_index+1, finish_index, finish_index-start_index]
                     length_lowest_part[k].append((finish_index-start_index))
                     start_index = 0
                     finish_index = 0
@@ -370,83 +386,132 @@ for k, v in outline_info_approx.items():
                 print(ie)
         
         length_lowest_part[k].sort(reverse=True)
-        
+
+#this part takes the indexes of the lowest part of the whole outline and take some pixel before and after
 for k, v in length_lowest_part.items():
-    longest_width = v[0]
-    longest_width_start = -1
-    longest_width_finish = -1
-    deepest_spike_values = []
-    for l, m in outline_spikes_coords.items():
-        if l[0] == k and m[2] == longest_width:
-            longest_width_start = m[0]
-            longest_width_finish = m[1]
-            break
-    for i in range(longest_width_start, longest_width_finish+1):
-        deepest_spike_values.append(outline_info_approx[k][0][i])
+    try:
+        longest_width_start = -1
+        longest_width_finish = -1
+        deepest_spike_values = []
+        for l, m in outline_spikes_infos.items():
+            if l[0] == k and m[2] == v[0]:
+                longest_width_start = m[0]
+                longest_width_finish = m[1]
+                break
+        for i in range(longest_width_start-10, longest_width_finish+11):
+            deepest_spike_values.append(outline_info[k][0][i])
+    except IndexError as ie:
+        print(ie)
+    else:
+        outline_on_the_cut[k].append(deepest_spike_values)
+        outline_on_the_cut[k].append(10)
+        outline_on_the_cut[k].append(len(deepest_spike_values)-11)
+        #plt.plot(deepest_spike_values, 'o-', color='blue', markersize=4)
+        mng = plt.get_current_fig_manager()
+        mng.resize(1700, 700)
+        mng.set_window_title(str(k))
+        #plt.show()
+
+#this part of method calculate the average of the lowest values, and the highest value neat the borders of the cut
+#to get then the half height to measure the width on it
+for k, v in outline_on_the_cut.items():
+    try:
+        outline_complete = v[0]
+        start = v[1]
+        finish = v[2]
+        outline_lowest_values = []
+        highest_value = -1
+        lowest_value = -1
+
+        for i in range(start, finish+1):
+            if outline_complete[i] <= 75:
+                outline_lowest_values.append(outline_complete[i])
+        for j in range(0, finish+1):
+            if np.positive(outline_complete[j] - outline_complete[j+1]) >= 100:
+                highest_value = outline_complete[j+1]
+        for h in range(start+1, len(outline_complete)+1):
+            if np.positive(outline_complete[h] - outline_complete[h+1]) >= 100:
+                if outline_complete[h+1] > highest_value:
+                    highest_value = outline_complete[h+1]
+    except Exception as ie:
+        print(ie)
+
+    width_lowest_part_average.append(len(outline_lowest_values))
+    lowest_value = round(np.average(outline_lowest_values))
+    print(*outline_complete)
+    print("N°", k, "Lowest Averaged", lowest_value, "Highest", highest_value)
+    half_height = round((highest_value-lowest_value)/2)
+    print(k, "Half Height", half_height, "\n")
+#this method checks where the half-height pass a segment from two point, then calculate the ray that pass for those two point and find x when y = half-height
+#i can try to check the lenght of all the segment that intersect the half-height ray and choose the longest or the nearest to the start and finish index
+#it works sometimes but tho make it work i can try to approximate to a value all the points that are not in the cut
+for k, v in outline_on_the_cut.items():
+    try:
+        outline_complete = v[0]
+        start = v[1]
+        finish = v[2]
+        half_height_start = -1
+        half_height_finish = -1
+        m_segment = -1
+        q_segment = -1
+        new_start = -1
+        for i in range(0, start+5):
+            if half_height <= max(outline_complete[i], outline_complete[i+1]) and half_height >= min(outline_complete[i], outline_complete[i+1]) and np.positive(outline_complete[i]-outline_complete[i+1]) >= 80:
+                m_segment = Calculate_M_Adjacent_Line(i, outline_complete[i], i+1, outline_complete[i+1])
+                q_segment = Calculate_Q(m_segment, i, outline_complete[i+1])
+                half_height_start = (half_height - q_segment)/m_segment
+                new_start = i
+        for j in range(new_start+1, len(outline_complete)+1):
+            if half_height <= max(outline_complete[j], outline_complete[j+1]) and half_height >= min(outline_complete[j], outline_complete[j+1]) and np.positive(outline_complete[j]-outline_complete[j+1]) >= 80:
+                m_segment = Calculate_M_Adjacent_Line(j, outline_complete[j], j+1, outline_complete[j+1])
+                q_segment = Calculate_Q(m_segment, j, outline_complete[j+1])
+                half_height_finish = (half_height - q_segment)/m_segment
+    except Exception as e:
+        print(e)
+    print(k)
+    print("hh s", half_height_start)
+    print("hh f", half_height_finish)
+    width_half_height_average.append(half_height_finish - half_height_start)
     
-    plt.plot(deepest_spike_values, 'o-', color='blue', markersize=4)
+print("2° Method Results from Width at Half-Height")
+print("Width Average", np.average(width_half_height_average), "px")
+print("Delta Width", Get_Delta_Width(width_half_height_average), "px")
+print("Standard Deviation", Get_Standard_Deviation(width_half_height_average), "px\n")
+
+#this part of method plots the part of the outline near the cut
+for k, v in outline_on_the_cut.items():
+    plt.plot(v[0], 'o-', color='blue', markersize=4)
     mng = plt.get_current_fig_manager()
     mng.resize(1700, 700)
     mng.set_window_title(str(k))
-    plt.show()
+    plt.show() 
+
+#printing 2° method with results from lowest part of outline
+print("2° Method Results from lowest part of outline")
+print("Width Average", np.average(width_lowest_part_average), "px")
+print("Delta Width", Get_Delta_Width(width_lowest_part_average), "px")
+print("Standard Deviation", Get_Standard_Deviation(width_lowest_part_average), "px\n")
 
 #this method plot the first profile and the last to see the difference
-for k in outline_info:
+for k in outline_info.keys():
     try:
         plt.plot(outline_info[k][0], '*-', color='purple', markersize=6)
         plt.plot(outline_info[10][0], 'o-', color='blue', markersize=4)
         mng = plt.get_current_fig_manager()
         mng.resize(1700, 700)
         mng.set_window_title(str(k))
-        plt.show()
+        #plt.show()
     except Exception as e:
         print(e)
-    else:
-        break
-
-#this method take the grayscale values, and their coords that were not approximated and goes back and take some values before and after the largest ray of low values
-#than check where the value before and after take the average of the lowest values and get the coords where the value is at least 30 in grayscale higher 
-#than get the width between those points
-"""
-for k, v in outline_info_approx.items():
-    try:
-        outline_approx = v[0]
-        x_coords3 = v[1]
-        outline_final = []
-        for i in range(len(v[1])+1):
-            if outline_approx[i] >= 130:
-                outline_final.insert(i, -1)
-            else:
-                outline_final.insert(i, outline_approx[i])
-    except Exception as e:
-        print(e)
-    
-    print(*outline_final)
-    outline_lower_values_width = []
-    width_number = 0
-    for i in range(len(outline_final)+1):
-        try:
-            if outline_final[i] != -1:
-                for i in range(i, len(outline_final)+1):
-                    if outline_final[i] != -1:
-                        width_number += 1
-                    else: 
-                        break
-        except Exception as e:
-            print(e)
-        else:
-            outline_lower_values_width.append(width_number)
-            width_number = 0
-        
-    
-    print(*outline_lower_values_width)
-"""
-
+    else: break
 
 #displaying the image with some values drawn
+#printing 1° method results
+print("1° Method Results")
 print("Width Average", width_average, "px")
-print("Delta Width", Get_Delta_Width(), "px")
-print("Standard Deviation", Get_Standard_Deviation(), "px")
+print("Delta Width", Get_Delta_Width(width_segment_list), "px")
+print("Standard Deviation", Get_Standard_Deviation(width_segment_list), "px")
+
 cv2.imshow("Image 2° method", back_to_rgb2)
 cv2.imshow("Image 1° method", back_to_rgb)
 cv2.waitKey(0)
