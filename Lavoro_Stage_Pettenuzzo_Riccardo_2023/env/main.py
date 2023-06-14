@@ -1,8 +1,7 @@
 import cv2 #lib for Computer Vision (opencv)
 import numpy as np #lib for math and calculus
-import flask #lib for web application
 import rawpy #lib to read raw files as .cr2
-from matplotlib import pyplot as plt 
+from matplotlib import pyplot as plt #lib for displaying graphs and plots
 
 
 #Calculate the angular coefficient(M) of the straight line adjacent to the cut given the coordinates of two points
@@ -131,7 +130,7 @@ def Get_Width_Average():
 
 #Get the difference between the first value and the last of all widths
 def Get_Delta_Width(width_list):
-    return width_list[0] - width_list[-1]
+    return np.positive(width_list[0] - width_list[-1])
 
 
 #Get the standard deviation from all the values of width of the cut
@@ -139,9 +138,7 @@ def Get_Standard_Deviation(width_list):
     return np.std(width_list)
 
 
-
-# sourcery skip: list-comprehension, move-assign-in-block, remove-dict-keys, use-dict-items
-image_path = r"C:\Users\stage.upe4\Desktop\Stefano\grigia_ob_resized.jpg"
+image_path = r"C:\Users\stage.upe4\Desktop\Stefano\rossa_ob_resized.jpg"
 
 #check if the file to read is jpg (or something else) cause raw files have different way to be read
 if image_path.split(".")[-1] == "jpg":#if we need to read different type of image we can easy fix this by putting != "cr2"
@@ -156,13 +153,12 @@ slab_grayscale = cv2.cvtColor(slab, cv2.COLOR_BGR2GRAY) #converting the image to
 #slab_grayscale_blur = cv2.GaussianBlur(slab_grayscale, (19, 19), 0)
 slab_grayscale_blur = cv2.medianBlur(slab_grayscale, 19)
 #grigia = 50, rossa = 40
-ret, thresh = cv2.threshold(slab_grayscale_blur, 50, 255, cv2.THRESH_BINARY) #filtering the image 
+ret, thresh = cv2.threshold(slab_grayscale_blur, 40, 255, cv2.THRESH_BINARY) #filtering the image 
 #thresh = cv2.adaptiveThreshold(slab_grayscale_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 199, 5)
 back_to_rgb = cv2.cvtColor(thresh, cv2.COLOR_GRAY2RGB) #converting the image to RGB
 width, height = thresh.shape #getting image's dimensions
 
 #define list of width to get Standard Deviation and Delta_Width
-
 angular_coefficient_list = []
 quote_list = []
 width_segment_list = []
@@ -173,7 +169,7 @@ segments_width = {
     2 : round((width)*.2),
     3 : round((width)*.3),
     4 : round((width)*.4),
-    5 : round((width/2)),
+    5 : round((width)*.5),
     6 : round((width)*.6),
     7 : round((width)*.7),
     8 : round((width)*.8),
@@ -202,17 +198,27 @@ if width_average == -1:
     width, height = thresh.shape[1], thresh.shape[0]
     width_average = Get_Width_Average()
 
-#printing all necessary values
+#print("1° Method Results")
+#print("Width Average", width_average, "px")
+#print("Delta Width", Get_Delta_Width(width_segment_list), "px")
+#print("Standard Deviation", Get_Standard_Deviation(width_segment_list), "px")
+#cv2.imshow("Image 1° method", back_to_rgb)
+##cv2.imwrite(r"C:\Users\stage.upe4\Desktop\image.jpg", back_to_rgb)
+#cv2.waitKey(0)
+#cv2.destroyAllWindows()
 
-#here finishes the first method to get width average, delta width and standard deviation
 
-#here start the second method to get width average, delta width and standard deviation
+#here finishes the first method to get width average, delta width and standard deviation that depends from threshold
+
+#here start the second method to get width average, delta width and standard deviation from the grayscale using outlines, getting width from the lowest part of every outline
+#and using width at half-height
 m_averaged = np.average(angular_coefficient_list)
 q_averaged = np.average(quote_list)
 
+#dict that specify the translation factor to get outlines at different height
 segments_width2 = {
     0 : round((width/2)),
-    1 : round((width)*.4),
+    1 : round((width)*.1),
     2 : round((width)*.3),
     3 : round((width)*.2),
     4 : round((width)*.1),
@@ -224,6 +230,7 @@ segments_width2 = {
     10 : round(-(width/2)),
 }
 
+#dict that stores every outline with his grayscale values, x-coords and y-coords
 outline_info = {
     0 : [],
     1 : [],
@@ -238,6 +245,7 @@ outline_info = {
     10 : [],
 }
 
+#dict that stores all approximated outlines and their x-coords
 outline_info_approx = {
     0 : [],
     1 : [],
@@ -252,10 +260,11 @@ outline_info_approx = {
     10 : [],
 }
 
+#dict that stores every spike of grayscale values of the outline
 outline_spikes_infos = {
 }
 
-
+#dict that stores the length of every spike took from the last dict
 length_lowest_part = {
     0 : [],
     1 : [],
@@ -270,6 +279,7 @@ length_lowest_part = {
     10 : [],
 }
 
+#dict that stores the outline's grayscale values near to the cut and also the starting and finish point of the cut
 outline_on_the_cut = {
     0 : [],
     1 : [],
@@ -284,6 +294,22 @@ outline_on_the_cut = {
     10 : [],
 }
 
+#dict that stores the outline's grayscale approximated values near to the cut
+outline_on_cut_approx = {
+    0 : [],
+    1 : [],
+    2 : [],
+    3 : [],
+    4 : [],
+    5 : [],
+    6 : [],
+    7 : [],
+    8 : [],
+    9 : [],
+    10 : [],
+}
+
+#defining variable and list to store values
 grayscale_pixel_value = []
 width_lowest_part_average = []
 width_half_height_average = []
@@ -422,7 +448,6 @@ for k, v in outline_on_the_cut.items():
         outline_lowest_values = []
         highest_value = -1
         lowest_value = -1
-
         for i in range(start, finish+1):
             if outline_complete[i] <= 75:
                 outline_lowest_values.append(outline_complete[i])
@@ -435,13 +460,35 @@ for k, v in outline_on_the_cut.items():
                     highest_value = outline_complete[h+1]
     except Exception as ie:
         print(ie)
-
     width_lowest_part_average.append(len(outline_lowest_values))
     lowest_value = round(np.average(outline_lowest_values))
+    print("N°", k)
     print(*outline_complete)
-    print("N°", k, "Lowest Averaged", lowest_value, "Highest", highest_value)
+    print("Lowest Averaged", lowest_value, "Highest", highest_value)
     half_height = round((highest_value-lowest_value)/2)
-    print(k, "Half Height", half_height, "\n")
+    print("Half Height", half_height, "\n")
+
+#this method tries to approx the highest values of the outline so then i can easy calculate the width at half-height
+#then i can take only the longest way of pixels that are not 255
+for k, v in outline_on_the_cut.items():
+    try:
+        outline_complete_approx = []
+        outline_complete = v[0]
+        start = v[1]
+        finish = v[2]
+        for i in range(0, len(outline_complete)+1):
+            if outline_complete[i] <= half_height:
+                outline_complete_approx.insert(i, outline_complete[i])
+            elif np.positive(outline_complete[i] - outline_complete[i+1]) <= 50 and (outline_complete[i] <= 255 and outline_complete[i] >= half_height):
+                outline_complete_approx.insert(i, 255)
+            else:
+                outline_complete_approx.insert(i, 255)
+    except Exception as e:
+        print(e)
+    outline_on_cut_approx[k].append(outline_complete_approx)
+    outline_on_cut_approx[k].append(start)
+    outline_on_cut_approx[k].append(finish)
+
 #this method checks where the half-height pass a segment from two point, then calculate the ray that pass for those two point and find x when y = half-height
 #i can try to check the lenght of all the segment that intersect the half-height ray and choose the longest or the nearest to the start and finish index
 #it works sometimes but tho make it work i can try to approximate to a value all the points that are not in the cut
@@ -461,16 +508,16 @@ for k, v in outline_on_the_cut.items():
                 q_segment = Calculate_Q(m_segment, i, outline_complete[i+1])
                 half_height_start = (half_height - q_segment)/m_segment
                 new_start = i
-        for j in range(new_start+1, len(outline_complete)+1):
+        for j in range(new_start, len(outline_complete)+1):
             if half_height <= max(outline_complete[j], outline_complete[j+1]) and half_height >= min(outline_complete[j], outline_complete[j+1]) and np.positive(outline_complete[j]-outline_complete[j+1]) >= 80:
                 m_segment = Calculate_M_Adjacent_Line(j, outline_complete[j], j+1, outline_complete[j+1])
                 q_segment = Calculate_Q(m_segment, j, outline_complete[j+1])
                 half_height_finish = (half_height - q_segment)/m_segment
     except Exception as e:
         print(e)
-    print(k)
-    print("hh s", half_height_start)
-    print("hh f", half_height_finish)
+    print("N°", k)
+    print("h-h s", half_height_start)
+    print("h-h f", half_height_finish, "\n")
     width_half_height_average.append(half_height_finish - half_height_start)
     
 print("2° Method Results from Width at Half-Height")
@@ -480,11 +527,16 @@ print("Standard Deviation", Get_Standard_Deviation(width_half_height_average), "
 
 #this part of method plots the part of the outline near the cut
 for k, v in outline_on_the_cut.items():
-    plt.plot(v[0], 'o-', color='blue', markersize=4)
-    mng = plt.get_current_fig_manager()
-    mng.resize(1700, 700)
-    mng.set_window_title(str(k))
-    plt.show() 
+    #plt.plot(outline_on_cut_approx[k][0], '+-', color='green', markersize=6)
+    try:
+        plt.plot(v[0], 'o-', color='blue', markersize=4)
+        plt.plot(outline_on_cut_approx[k][0], '+-', color='red', markersize=6)
+        mng = plt.get_current_fig_manager()
+        mng.resize(1700, 700)
+        mng.set_window_title(str(k))
+        plt.show() 
+    except Exception as e:
+        print(e)
 
 #printing 2° method with results from lowest part of outline
 print("2° Method Results from lowest part of outline")
@@ -495,12 +547,12 @@ print("Standard Deviation", Get_Standard_Deviation(width_lowest_part_average), "
 #this method plot the first profile and the last to see the difference
 for k in outline_info.keys():
     try:
-        plt.plot(outline_info[k][0], '*-', color='purple', markersize=6)
-        plt.plot(outline_info[10][0], 'o-', color='blue', markersize=4)
+        #plt.plot(outline_info[k][0], '*-', color='purple', markersize=6)
+        #plt.plot(outline_info[10][0], 'o-', color='blue', markersize=4)
         mng = plt.get_current_fig_manager()
         mng.resize(1700, 700)
         mng.set_window_title(str(k))
-        #plt.show()
+        #lt.show()
     except Exception as e:
         print(e)
     else: break
@@ -511,7 +563,6 @@ print("1° Method Results")
 print("Width Average", width_average, "px")
 print("Delta Width", Get_Delta_Width(width_segment_list), "px")
 print("Standard Deviation", Get_Standard_Deviation(width_segment_list), "px")
-
 cv2.imshow("Image 2° method", back_to_rgb2)
 cv2.imshow("Image 1° method", back_to_rgb)
 cv2.waitKey(0)
