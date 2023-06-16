@@ -202,7 +202,7 @@ if width_average == -1:
 #cv2.destroyAllWindows()
 #here finishes the first method to get width average, delta width and standard deviation that depends from threshold
 
-
+#TODO check every try except in the code and where is possible replace it with if closure
 
 #here start the second method to get width average, delta width and standard deviation from the grayscale using outlines, getting width from the lowest part of every outline
 #and using width at half-height
