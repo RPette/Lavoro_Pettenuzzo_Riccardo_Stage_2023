@@ -2,7 +2,8 @@ import cv2 #lib for Computer Vision (opencv)
 import numpy as np #lib for math and calculus
 import rawpy #lib to read raw files as .cr2
 from matplotlib import pyplot as plt #lib for displaying graphs and plots
-#need to summarize methods also in italian
+
+#TODO summarize methods also in italian
 
 #Calculate the angular coefficient(M) of the straight line adjacent to the cut given the coordinates of two points
 def Calculate_M_Adjacent_Line(x1, y1, x2, y2):
