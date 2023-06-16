@@ -2,7 +2,7 @@ import cv2 #lib for Computer Vision (opencv)
 import numpy as np #lib for math and calculus
 import rawpy #lib to read raw files as .cr2
 from matplotlib import pyplot as plt #lib for displaying graphs and plots
-
+#need to summarize methods also in italian
 
 #Calculate the angular coefficient(M) of the straight line adjacent to the cut given the coordinates of two points
 def Calculate_M_Adjacent_Line(x1, y1, x2, y2):
@@ -119,7 +119,10 @@ def Get_Width_Average():
 
 #Get the difference between the first value and the last of all widths
 def Get_Delta_Width(width_list):
-    return np.positive(width_list[0] - width_list[-1])
+    try:
+        return np.positive(width_list[0] - width_list[-1])
+    except IndexError as ie:
+        print(ie)
 
 
 #Get the standard deviation from all the values of width of the cut
@@ -581,19 +584,24 @@ for k, v in outline_on_the_cut.items():
         highest_value = -1#variable that store the highest value on right or left, after or before the spike
         for i in range(start, finish+1):
             if outline_complete[i] <= 75:
-                outline_lowest_values.append(outline_complete[i])
+                    outline_lowest_values.append(outline_complete[i])
         for j in range(0, finish+1):
             if np.positive(outline_complete[j] - outline_complete[j+1]) >= 100:
                 highest_value = outline_complete[j+1]
-        for h in range(start+1, len(outline_complete)+1):
+        for h in range(start+1, len(outline_complete)):
             if np.positive(outline_complete[h] - outline_complete[h+1]) >= 100:
                 if outline_complete[h+1] > highest_value:
                     highest_value = outline_complete[h+1]
     except Exception as ie:
         print(ie)
-width_lowest_part_average.append(len(outline_lowest_values))
-lowest_value = round(np.average(outline_lowest_values))
-half_height = round((highest_value-lowest_value)/2)
+    try:
+        width_lowest_part_average.append(len(outline_lowest_values))
+        lowest_value = round(np.average(outline_lowest_values))
+        half_height = round((highest_value-lowest_value)/2)
+    except Exception as e:
+        print(e)
+    
+    
 
 #this method tries to approx the highest values of the outline so then i can easy calculate the width at half-height the associate the gray scale values the start and finish in a dict
 #then i can take only the longest way of pixels that are not 255
@@ -635,19 +643,25 @@ for k, v in outline_on_the_cut.items():
                 q_segment = Calculate_Q(m_segment, i, outline_complete[i+1])
                 half_height_start = (half_height - q_segment)/m_segment
                 new_start = i
-        for j in range(new_start, len(outline_complete)+1):
+        for j in range(new_start, len(outline_complete)):
             if half_height <= max(outline_complete[j], outline_complete[j+1]) and half_height >= min(outline_complete[j], outline_complete[j+1]) and np.positive(outline_complete[j]-outline_complete[j+1]) >= 80:
                 m_segment = Calculate_M_Adjacent_Line(j, outline_complete[j], j+1, outline_complete[j+1])
                 q_segment = Calculate_Q(m_segment, j, outline_complete[j+1])
-                half_height_finish = (half_height - q_segment)/m_segment
+                half_height_finish = (half_height - q_segment)/m_segment  
+    except IndexError as e:
+        print(e)
+    try:              
+        width_half_height_average.append(half_height_finish-half_height_start)
     except Exception as e:
         print(e)
-width_half_height_average.append(half_height_finish - half_height_start)
-    
+
 print("2° Method Results from Width at Half-Height")
 print("Width Average", np.average(width_half_height_average), "px")
 print("Delta Width", Get_Delta_Width(width_half_height_average), "px")
 print("Standard Deviation", Get_Standard_Deviation(width_half_height_average), "px\n")
+
+print(len(width_half_height_average), len(width_lowest_part_average))
+    
 
 #this part of method plots the part of the outline near the cut
 for k, v in outline_on_the_cut.items():
