@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt #lib for displaying graphs and plots
 #TODO summarize methods also in italian
 
 #Calculate the angular coefficient(M) of the straight line adjacent to the cut given the coordinates of two points
+
 def Calculate_M_Adjacent_Line(x1, y1, x2, y2):
     return (y2 - y1)/(x2 - x1)
 
@@ -152,8 +153,8 @@ ret, thresh = cv2.threshold(slab_grayscale_blur, 40, 255, cv2.THRESH_BINARY) #fi
 back_to_rgb = cv2.cvtColor(thresh, cv2.COLOR_GRAY2RGB) #converting the image to RGB
 width, height = thresh.shape #getting image's dimensions
 
-#TODO using cv2.findContours after filtering the image, i can take all the area inside the contours and the largest are is probably the cut
-#TODO then i can put it on a full white image and proceed with the 1° method to get width, delta width amd standard deviation 
+#TODO using cv2.findContours after filtering the image, i can take all the area inside the contours and the largest area is probably the cut
+#TODO then i can put it on a full white image and proceed with the 1° method to get width, delta width and standard deviation 
 
 #define list of width to get Standard Deviation and Delta_Width
 width_segment_list = []
@@ -201,11 +202,12 @@ if width_average == -1:
 ##cv2.imwrite(r"C:\Users\stage.upe4\Desktop\image.jpg", back_to_rgb)
 #cv2.waitKey(0)
 #cv2.destroyAllWindows()
-#here finishes the first method to get width average, delta width and standard deviation that depends from threshold
+
+#HERER FINISHES the first method to get width average, delta width and standard deviation that depends from threshold
 
 #TODO check every try except in the code and where is possible replace it with if closure
 
-#here start the second method to get width average, delta width and standard deviation from the grayscale using outlines, getting width from the lowest part of every outline
+#HERER STARTS the second method to get width average, delta width and standard deviation from the grayscale using outlines, getting width from the lowest part of every outline
 #and using width at half-height
 
 #dict that specify the translation factor to get outlines at different height
@@ -372,7 +374,7 @@ mng.resize(1700, 700)
 mng.set_window_title("First Line")
 plt.show()
 
-#taking grayscale values of the last line
+#taking grayscale values of the last line (on bottom of image)
 for i in range(height):
     try:
         if slab_grayscale2[-1, i] <= 100:
@@ -387,7 +389,7 @@ mng.resize(1700, 700)
 mng.set_window_title("Last Line")
 plt.show()
 
-#TODO take all the pixel that passes for the two mid coords took from the first and the last line, if the pixels that passes for the line are all near each other it's the correct line
+#TODO take all the pixel that passes for the two mid coords took from the first and the last line, if the pixels that passes for the line are all near each other for their grayscale values other it's the correct line
 #TODO if not i need to change the segment of semi black pixels
 
 #taking from the top of image the start, finish and length of every spike in gray scale values, and putting all the lengths to a list to then take the highest
@@ -521,7 +523,7 @@ for k, v in outline_info.items():
         outline_info_approx[k].append(new_grayscale_pixel_values)
         outline_info_approx[k].append(x_coords_approx)
 
-#this method takes alle the approximated lists of grayscale pixel and take all the start and finish index where the line where not approximated
+#this method takes all the approximated lists of grayscale pixel and take all the start and finish index where the line where not approximated
 #it associate the starting index, the finish index and the length where the values are low, then it appends to another list the lengths and calculate the higher for every line
 for k, v in outline_info_approx.items():
     try:
@@ -569,12 +571,12 @@ for k, v in length_lowest_part.items():
         outline_on_the_cut[k].append(10)
         outline_on_the_cut[k].append(len(deepest_spike_values)-11)
         #plt.plot(deepest_spike_values, 'o-', color='blue', markersize=4)
-        mng = plt.get_current_fig_manager()
-        mng.resize(1700, 700)
-        mng.set_window_title(str(k))
+        #mng = plt.get_current_fig_manager()
+        #mng.resize(1700, 700)
+        #mng.set_window_title(str(k))
         #plt.show()
 
-#this part of method calculate the average of the lowest values, and the highest value neat the borders of the cut
+#this part of method calculate the average of the lowest values, and the highest value near the borders of the cut
 #to get then the half height to measure the width on it
 for k, v in outline_on_the_cut.items():
     try:
@@ -601,10 +603,9 @@ for k, v in outline_on_the_cut.items():
         half_height = round((highest_value-lowest_value)/2)
     except Exception as e:
         print(e)
-    
-    
+        
 
-#this method tries to approx the highest values of the outline so then i can easy calculate the width at half-height the associate the gray scale values the start and finish in a dict
+#this method tries to approx the highest values of the outline so then i can calculate the width at half-height the associate the gray scale values the start and finish in a dict
 #then i can take only the longest way of pixels that are not 255
 for k, v in outline_on_the_cut.items():
     try:
@@ -627,7 +628,7 @@ for k, v in outline_on_the_cut.items():
 
 #this method checks where the half-height pass a segment from two point, then calculate the ray that pass for those two point and find x when y = half-height
 #i can try to check the length of all the segment that intersect the half-height ray and choose the longest or the nearest to the start and finish index
-#it works sometimes but tho make it work i can try to approximate to a value all the points that are not in the cut
+#it works sometimes but to make it work everytime i can try to approximate to a value all the points that are not in the cut
 for k, v in outline_on_the_cut.items():
     try:
         outline_complete = v[0]#list to store gray scale values of the outline on the cut

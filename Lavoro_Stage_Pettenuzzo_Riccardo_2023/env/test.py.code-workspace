@@ -5,6 +5,8 @@
         }
     ],
     "settings": {
-        "wolf.disableHotModeWarning": true
+        "wolf.disableHotModeWarning": true,
+        "docwriter.style": "NumPy",
+        "docwriter.progress.trackFunctions": true
     }
 }
