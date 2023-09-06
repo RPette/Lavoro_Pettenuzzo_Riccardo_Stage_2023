@@ -1,6 +1,49 @@
-\documentclass{article}
-\usepackage[utf8]{inputenc}
+\documentclass[a4paper, notitlepage, 12pt]{article}
+    \title{\textcolor{black}{\emph{PCTO BRETON SPA}}}
+    \author{PETTENUZZO RICCARDO}%\thanks{Ringrazio Federico Milan, Luca Malorzo, De Zuani Stefano e l'intero DIGI Hub per l'esperienza}
+    \date{}
+    \pagestyle{empty}
+    \pagenumbering{Roman}
+    
+
+\usepackage[utf8]{inputenc, xcolor}
+\usepackage[paperwidth=597pt, paperheight=815pt, textheight = 721pt, voffset = 0pt]{geometry}
+\setlength{\footnotesep}{10.75pt}
+\setlength{\skip\footins}{45pt}
 
 \begin{document}
-    Ao Bella!
+    \normalsize
+    \maketitle
+    \begin{abstract}
+        \noindent \rule{\linewidth}{.6pt}\par
+        \noindent L'azienda Breton necessita che il processo di controllo dell'usura del disco dentellato usato nella
+        macchina per il taglio delle lastre, venga automatizzato grazie ad un programma sviluppato in Python.
+        Il programma elabora la foto dello sfrido scattata da una fotocamera montanta sulla macchina, viene calcolata
+        la differenza di spessore lungo lo sfrido e quando quest'ultima oltrepassa un valore nell'ordine dei centesimi 
+        di millimetro, l'utensile necessita di essere sostituito.
+        \par
+        \noindent \rule{\linewidth}{.6pt}  
+    \end{abstract}
+    \section{Obiettivo e Descrizione  del Progetto}\par
+        \noindent L'azienda \textbf{Breton} dispone di macchine impiegate nel taglio di lastre di vario materiale,
+        una di essere utilizza un \emph{mandrino}\footnote[0]{\indent Attrezzo della macchina operatrice con funzione di sostegno per l'utensile, o di supporto per il pezzo durante la lavorazione.} che sostiene un disco dentellato.
+        La lastra viene posizionata nel piano della macchina, sorretta da delle ventose che ne bloccano il movimento,
+        quando la macchina viene azionata parte il programma di taglio inserito, il disco scende e grazie ad una
+        soluzione acquosa la lastra viene tagliata. Il disco è soggetto ad \textbf{usura}, che viene periodicamente controllata da un'addetto esperto e la 
+        sostituzione dell'utensile avviene quando la larghezza dello \emph{sfrido}\footnote[1]{\indent Lo sfrido è lo scarto di lavorazione delle piastrelle che si crea durante la fase di posa.} differisce
+        nella lunghezza di quest'ultimo. Per permettere all'addetto di controllare lo stato dello strumento la lastra
+        non viene tagliata completamente nella sua profondità.\par
+        \noindent L'obiettivo del progetto è quello di \textbf{automatizzare} il processo di controllo dello stato di usura 
+        del disco, quindi realizzare un programma in Python\footnote[2]{\indent Python è un linguaggio di programmazione utilizzato nelle applicazionie web, sviluppo software, data science e machine learning} che elabora una foto 
+        scattata da una fotocamera montata sulla macchina, in modo da ottenere la \emph{differenza di spessore} lungo lo sfrido, 
+        il manutentore interviene nel caso in cui la differenza di spessore sia sopra un certo valore in centesimi di millimetro.\par
+        \noindent Il programma utilizza la libreria \textbf{OpenCV}\footnote[3]{\indent OpenCV è una potente libreria che consente di eseguire operazioni di elaborazione delle immagini, deep learning, machine learning e computer vision su feed video in diretta.} per lo scatto della foto, successivamente 
+        per la sua elaborazione e infine per la visione finale dei processo eseguiti per il ricavo del risultato.
+    \pagebreak
+    \begin{abstract}
+        \noindent \rule{\linewidth}{.6pt}\par
+
+        \noindent \rule{\linewidth}{.6pt} 
+    \end{abstract}    
+    \section{Primo metodo di Soluzione del problema}
 \end{document}
