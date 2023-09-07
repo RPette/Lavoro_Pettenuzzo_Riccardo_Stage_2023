@@ -156,6 +156,9 @@ def Get_Delta_Width(width_list):
 def Get_Standard_Deviation(width_list):
     return np.std(width_list)
 
+def Get_Results():
+    return results
+
 image_path = r"C:\Users\stage.upe4\Desktop\Stefano\grigia_ob_resized.jpg"
 
 #?check if the file to read is jpg (or something else) cause raw files have different way to be read
@@ -783,7 +786,12 @@ print("1° Method Results")
 print("Width Average", width_average, "px")
 print("Delta Width", Get_Delta_Width(width_segment_list), "px")
 print("Standard Deviation", Get_Standard_Deviation(width_segment_list), "px")
+
+results = [back_to_rgb, width_average, Get_Delta_Width(width_segment_list), Get_Standard_Deviation(width_segment_list), back_to_rgb2, np.average(width_lowest_part_average), Get_Delta_Width(width_lowest_part_average), Get_Standard_Deviation(width_lowest_part_average)]
+
 cv2.imshow("Image 2° method", back_to_rgb2)
 cv2.imshow("Image 1° method", back_to_rgb)
+cv2.imwrite("imgs/first.jpg", back_to_rgb)
+cv2.imwrite("imgs/second.jpg", back_to_rgb2)
 cv2.waitKey(0)
 cv2.destroyAllWindows()

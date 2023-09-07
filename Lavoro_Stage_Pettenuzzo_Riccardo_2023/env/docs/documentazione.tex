@@ -42,8 +42,27 @@
     \pagebreak
     \begin{abstract}
         \noindent \rule{\linewidth}{.6pt}\par
-
+        
         \noindent \rule{\linewidth}{.6pt} 
     \end{abstract}    
     \section{Primo metodo di Soluzione del problema}
+    \noindent Il primo metodo di soluzione del problema parte dal presupposto che l'immagine deve essere \emph{filtrata} in modo
+    da rendere visibile solamente la parte dello sfrido, questo processo avviene convertendo l'immagine scattata da \textbf{RGB} a 
+    \textbf{Scala di Grigi}\footnote[4]{\indent Ogni pixel dell'immagine viene convertito da una serie di tre valori a un valore unico da 0 a 255 in base all'intensità di quel pixel}.
+    Successivamente si utilizza prima la funzione \emph{Blur} la quale sfuoca zone di pixel, quindi rende lo scatto più facile da filtrare 
+    grazie alla funzione \emph{Threshold} che in base a un valore statico converte tutti i pixel che superano questo valore in bianco e tutti gli altri i nero,
+    così da evidenziare nell'immagine solo lo sfrido.\par
+    \noindent Il passo successivo è quello di calcolare il numero di pixel della parte nera, ovvero lo sfrido, il programma partendo 
+    dalla metà dell'immagine cerca i \emph{bordi} dello sfrido, in questo caso i bordi si trovano quando c'è la sequenza bianco e nero, oppure
+    nero e bianco. Dopo di questo in base a come è \textbf{orientato} lo sfrido viene calcolato il numero di pixel tra i due bordi: nel caso
+    in cui lo sfrido sia \emph{verticale}, il programma calcola la differenza tra le coordinate in x dei due bordi, nel caso in cui invece 
+    lo sfrido sia \emph{obliquo}, il programma calcola prima \textbf{l'equazione} della retta adiacente allo sfrido, sfruttando i due punti nel bordo dello sfrido
+    a diverse altezze dell'immagine, applica poi il \emph{\textbf{sistema di equazioni}}\footnote[5]{\indent descrizione sistema di equazioni} passanti per due punti e trova l'equazione. Utilizza poi 
+    il \emph{\textbf{teorema delle rette perpendicolari}}\footnote[6]{\indent descrizione teorema delle rette perpendicolari}, sapendo che rette perpendicolari tra loro presentano coefficienti angolari \emph{reciproci},
+    trova poi l'equazione completa sostituendo le coordinate del punto nel bordo, successivamente cerca le coordinate del punto appartenete alla 
+    retta nel bordo opposto dello sfrido. Infine applica \emph{\textbf{pitagora}} tra due punti per trovare la lunghezza del segmento, nel caso in cui l'orientamento
+    dello sfrido sia \emph{orizzontale} il programma trova solo pixel bianchi e quindi ruota l'immagine di novanta gradi fino a quando
+    non trova il bordo.\par
+    \noindent In conclusione itera\footnote[7]{\indent significato iterare} questo processo in diverse altezze dell'immagine e calcola poi lo \emph{Spessore Medio}, la \emph{Differenza di Spessore} tra 
+    lo spessore nel punto più alto e quello più basso e calcola poi la \emph{Deviazione Standard}\footnote[8]{\indent significato standard deviation} tra tutti gli spessori.
 \end{document}
