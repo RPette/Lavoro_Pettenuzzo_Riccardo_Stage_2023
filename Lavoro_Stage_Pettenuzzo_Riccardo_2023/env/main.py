@@ -150,7 +150,6 @@ def Get_Delta_Width(width_list):
     except IndexError as ie:
         print(ie)
 
-
 #?Get the standard deviation from all the values of width of the cut
 #!Prendo la standard deviation dalla lista di valori degli spessori
 def Get_Standard_Deviation(width_list):
@@ -160,7 +159,6 @@ def Get_Results():
     return results
 
 image_path = r"C:\Users\stage.upe4\Desktop\Stefano\grigia_ob_resized.jpg"
-
 #?check if the file to read is jpg (or something else) cause raw files have different way to be read
 #!controllo che il percorso del file contenga jpg (o altro), oppure cr2 dato che hanno modi diversi di lettura
 if image_path.split(".")[-1] == "jpg":#if we need to read different type of image we can easy fix this by putting != "cr2"
@@ -230,17 +228,9 @@ if width_average == -1:
     width, height = thresh.shape[1], thresh.shape[0]
     width_average = Get_Width_Average()
 
-#print("1° Method Results")
-#print("Width Average", width_average, "px")
-#print("Delta Width", Get_Delta_Width(width_segment_list), "px")
-#print("Standard Deviation", Get_Standard_Deviation(width_segment_list), "px")
-#cv2.imshow("Image 1° method", back_to_rgb)
-##cv2.imwrite(r"C:\Users\stage.upe4\Desktop\image.jpg", back_to_rgb)
-#cv2.waitKey(0)
-#cv2.destroyAllWindows()
-
 #?HERER FINISHES the first method to get width average, delta width and standard deviation that depends from threshold
 #!QUI FINISCE il primo metodo per ottenere lo spessore del taglio, standard deviation e delta_width, tutto dipende da come viene filtrata l'immagine
+
 
 #?HERER STARTS the second method to get width average, delta width and standard deviation from the grayscale using outlines, getting width from the lowest part of every outline
 #?and using width at half-height

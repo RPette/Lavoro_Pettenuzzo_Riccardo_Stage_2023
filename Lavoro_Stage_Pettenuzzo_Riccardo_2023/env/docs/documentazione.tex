@@ -1,29 +1,31 @@
 \documentclass[a4paper, notitlepage, 12pt]{article}
     \title{\textcolor{black}{\emph{PCTO BRETON SPA}}}
-    \author{PETTENUZZO RICCARDO}%\thanks{Ringrazio Federico Milan, Luca Malorzo, De Zuani Stefano e l'intero DIGI Hub per l'esperienza}
+    \author{PETTENUZZO RICCARDO}%\thanks{Ringrazio Federico Milan, Luca Malorzo, De Zuani Stefano e l'intero DIGI Hub per l'esperienza} link della repository su git
     \date{}
     \pagestyle{empty}
     \pagenumbering{Roman}
     
 
 \usepackage[utf8]{inputenc, xcolor}
-\usepackage[paperwidth=597pt, paperheight=815pt, textheight = 721pt, voffset = 0pt]{geometry}
+\usepackage[paperwidth=597pt, paperheight=815pt, textheight = 721pt, voffset = -10pt]{geometry}
+\renewcommand{\abstractname}{}
 \setlength{\footnotesep}{10.75pt}
-\setlength{\skip\footins}{45pt}
+\setlength{\skip\footins}{35pt}
 
 \begin{document}
     \normalsize
     \maketitle
     \begin{abstract}
         \noindent \rule{\linewidth}{.6pt}\par
-        \noindent L'azienda Breton necessita che il processo di controllo dell'usura del disco dentellato usato nella
-        macchina per il taglio delle lastre, venga automatizzato grazie ad un programma sviluppato in Python.
+        \noindent L'azienda \emph{Breton} necessita che il processo di controllo dell'usura del disco dentellato usato nella
+        macchina per il taglio delle lastre, venga automatizzato grazie ad un programma sviluppato in \emph{Python}.
         Il programma elabora la foto dello sfrido scattata da una fotocamera montanta sulla macchina, viene calcolata
-        la differenza di spessore lungo lo sfrido e quando quest'ultima oltrepassa un valore nell'ordine dei centesimi 
+        la \textbf{differenza di spessore} lungo lo \emph{sfrido} e quando quest'ultima oltrepassa un valore nell'ordine dei centesimi 
         di millimetro, l'utensile necessita di essere sostituito.
         \par
         \noindent \rule{\linewidth}{.6pt}  
     \end{abstract}
+    \thispagestyle{plain}
     \section{Obiettivo e Descrizione  del Progetto}\par
         \noindent L'azienda \textbf{Breton} dispone di macchine impiegate nel taglio di lastre di vario materiale,
         una di essere utilizza un \emph{mandrino}\footnote[0]{\indent Attrezzo della macchina operatrice con funzione di sostegno per l'utensile, o di supporto per il pezzo durante la lavorazione.} che sostiene un disco dentellato.
@@ -42,9 +44,13 @@
     \pagebreak
     \begin{abstract}
         \noindent \rule{\linewidth}{.6pt}\par
-        
+        \noindent Il primo metodo di soluzione converte prima l'immagine in \emph{Scala di Grigio} applica \emph{Blur e Threshold} all'immagine, con l'obbiettivo di ottenere solo la parte dello sfrido.
+        Successivamente calcola lo spessore in base a come è orientato lo sfrido: se \textbf{verticale} calcola la differenza tra le coordinate in x di due punti alla stessa altezza. Se \textbf{obliquo}, trova prima l'equazione della \emph{retta perpendicolare} allo sfrido
+        e applica \emph{pitagora} per trovare lo spessore dello sfrido. Se \emph{orizzontale} ruota lo scatto e applica uno dei metodi di calcolo dello spessore precendnti.
+        Infine itera il processo di calcolo in vari punti nell'altezza dell'immagine\par
         \noindent \rule{\linewidth}{.6pt} 
-    \end{abstract}    
+    \end{abstract}
+    \thispagestyle{plain} 
     \section{Primo metodo di Soluzione del problema}
     \noindent Il primo metodo di soluzione del problema parte dal presupposto che l'immagine deve essere \emph{filtrata} in modo
     da rendere visibile solamente la parte dello sfrido, questo processo avviene convertendo l'immagine scattata da \textbf{RGB} a 
@@ -55,14 +61,34 @@
     \noindent Il passo successivo è quello di calcolare il numero di pixel della parte nera, ovvero lo sfrido, il programma partendo 
     dalla metà dell'immagine cerca i \emph{bordi} dello sfrido, in questo caso i bordi si trovano quando c'è la sequenza bianco e nero, oppure
     nero e bianco. Dopo di questo in base a come è \textbf{orientato} lo sfrido viene calcolato il numero di pixel tra i due bordi: nel caso
-    in cui lo sfrido sia \emph{verticale}, il programma calcola la differenza tra le coordinate in x dei due bordi, nel caso in cui invece 
-    lo sfrido sia \emph{obliquo}, il programma calcola prima \textbf{l'equazione} della retta adiacente allo sfrido, sfruttando i due punti nel bordo dello sfrido
-    a diverse altezze dell'immagine, applica poi il \emph{\textbf{sistema di equazioni}}\footnote[5]{\indent descrizione sistema di equazioni} passanti per due punti e trova l'equazione. Utilizza poi 
-    il \emph{\textbf{teorema delle rette perpendicolari}}\footnote[6]{\indent descrizione teorema delle rette perpendicolari}, sapendo che rette perpendicolari tra loro presentano coefficienti angolari \emph{reciproci},
+    in cui lo sfrido sia \emph{verticale}, il programma calcola la differenza tra le coordinate in x dei due bordi.
+    \noindent Nel caso in cui invece lo sfrido sia \emph{obliquo}, il programma calcola prima \textbf{l'equazione} della retta adiacente allo sfrido, sfruttando i due punti nel bordo dello sfrido
+    a diverse altezze dell'immagine, applica poi il \emph{\textbf{sistema di equazioni}}\footnote[5]{\indent In matematica, un sistema di equazioni è un insieme di due o più equazioni che ammettono le stesse soluzioni} passanti per due punti e trova l'equazione. Utilizza poi 
+    il \emph{\textbf{teorema delle rette perpendicolari}}\footnote[6]{\indent Data una retta r ed un punto p, esiste ed è unica la retta che passa per p ed è perpendicolare ad r}, sapendo che rette perpendicolari tra loro presentano coefficienti angolari \emph{reciproci},
     trova poi l'equazione completa sostituendo le coordinate del punto nel bordo, successivamente cerca le coordinate del punto appartenete alla 
-    retta nel bordo opposto dello sfrido. Infine applica \emph{\textbf{pitagora}} tra due punti per trovare la lunghezza del segmento, nel caso in cui l'orientamento
+    retta nel bordo opposto dello sfrido. Infine applica \emph{\textbf{pitagora}} tra due punti per trovare la lunghezza del segmento. Nel caso in cui l'orientamento
     dello sfrido sia \emph{orizzontale} il programma trova solo pixel bianchi e quindi ruota l'immagine di novanta gradi fino a quando
     non trova il bordo.\par
-    \noindent In conclusione itera\footnote[7]{\indent significato iterare} questo processo in diverse altezze dell'immagine e calcola poi lo \emph{Spessore Medio}, la \emph{Differenza di Spessore} tra 
-    lo spessore nel punto più alto e quello più basso e calcola poi la \emph{Deviazione Standard}\footnote[8]{\indent significato standard deviation} tra tutti gli spessori.
+    \pagebreak
+    \noindent In conclusione itera\footnote[7]{\indent Ripetere, un procedimento eseguito più volte} questo processo in diverse altezze dell'immagine e calcola poi lo \emph{Spessore Medio}, la \emph{Differenza di Spessore} tra 
+    lo spessore nel punto più alto e quello più basso e calcola poi la \emph{Deviazione Standard}\footnote[8]{\indent La deviazione standard è un indice riassuntivo delle differenze dei valori rispetto alla media della variabile.} tra tutti gli spessori.
+    \begin{abstract}
+        \noindent \rule{\linewidth}{.6pt}\par
+        
+        \noindent \rule{\linewidth}{.6pt} 
+    \end{abstract}
+    \thispagestyle{plain} 
+    \section{Secondo metodo di Soluzione del problema}
+    \noindent Il secondo metodo di soluzione a differenza del primo non applica filtri all'immagine, in quanto potrebberò non venire applicati nel modo corretto oppure corrompere l'intergrità
+    dei pixel dello sfrido, l'immagine viene solamente convertita in scala di grigi. Il procedimento di calcolo dello spessore dello sfrido parte prendendo tutti i valori dei pixel nella linea più alta 
+    dell'immagine e in quella più bassa. Grazie alla libreria \emph{\textbf{MatPlotLib}}\footnote[9]{\indent Libreria per la creazione di grafici per il linguaggio di programmazione Python} che permette di visionare grafici, si costruiscono due grafici che nell'asse delle ascisse i pixel e nell'asse delle ordinate
+    il corrispettivo valore in scala di grigi, così da ottenere il \textbf{profilo} di quella serie di pixel. Sfruttando questi profili il programma capisce dove si trova lo sfrido e trova in entrambi i profili
+    il \emph{punto centrale}, come nel primo metodo si applica il \emph{sistema di equazioni} e viene calcolata l'equazione dello sfrido, viene riapplicato il \emph{teorema delle rette perpendicolari} e utilizzando un punto a metà altezza dell'immagine
+    viene calcolata l'equazione della retta perpendicolare. Vengono poi utilizzati diversi \textbf{fattori di traslazione}\footnote[10]{\indent \'E un valore positivo o negativo che trasla/sposta in altezza la retta principale} così da avere le equazioni della stessa retta traslata in tutta l'altezza
+    dell'immagine.\par
+    \noindent Dopo aver ottenuto le equazioni delle rette, ulizzo quest'ultime per ottenere i valori di ogni pixel di quella retta e si riutilizza \emph{matplotlib} per costruire i grafici dei profili, 
+    per ogni profilo ottenuto viene rilevata la posizione dello sfrido e si ricostruisce il grafico del profilo solamente dello sfrido. Infine per ottenere lo spessore dello sfrido non viene calcolato nè nel punto più alto del bordo
+    nè nel punto più basso, si calcola dunque lo \emph{\textbf{Spessore a Metà Altezza}}\footnote[11]{\indent Viene calcolato lo spessore a metà altezza per ottenere un valore non troppo elevato per errore del bordo e non troppo basso per la differenza di spessore del fondo dello sfrido}, per fare questo quindi viene trovato il punto nei bordi in cui il valore del pixel cambia drasticamente
+    questo punto viene poi approssimato al valore massimo, viene presa la metà di quel valore in entrambi i bordi e quindi si calcola lo \emph{spessore a metà altezza}.\par
+    \noindent In conclusione questo processo viene ripetuto per ogni profilo trovato e vengono poi calcolati lo spessore medio, la differenza di spessore e infine la deviazione standard
 \end{document}
