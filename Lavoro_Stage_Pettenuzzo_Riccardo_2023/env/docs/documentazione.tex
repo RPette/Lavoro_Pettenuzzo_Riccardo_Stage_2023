@@ -70,25 +70,52 @@
     dello sfrido sia \emph{orizzontale} il programma trova solo pixel bianchi e quindi ruota l'immagine di novanta gradi fino a quando
     non trova il bordo.\par
     \pagebreak
-    \noindent In conclusione itera\footnote[7]{\indent Ripetere, un procedimento eseguito più volte} questo processo in diverse altezze dell'immagine e calcola poi lo \emph{Spessore Medio}, la \emph{Differenza di Spessore} tra 
+    \noindent In conclusione itera\footnote[7]{\indent Ripetere. Un procedimento eseguito più volte} questo processo in diverse altezze dell'immagine e calcola poi lo \emph{Spessore Medio}, la \emph{Differenza di Spessore} tra 
     lo spessore nel punto più alto e quello più basso e calcola poi la \emph{Deviazione Standard}\footnote[8]{\indent La deviazione standard è un indice riassuntivo delle differenze dei valori rispetto alla media della variabile.} tra tutti gli spessori.
     \begin{abstract}
         \noindent \rule{\linewidth}{.6pt}\par
-        
+        \noindent Il secondo metodo converte l'immagine in scala di grigi e non applica alcun filtro in quanto potrebbero
+        conpromettere l'integrità dell'immagine,vengono ricavati i \textbf{profili} della parte più alta dell'immagine e di quella più bassa,
+        viene poi rilevato lo sfrido nel profilo e viene calcolato il punto medio dello sfrido, utilizza poi il sistema di equazioni e  il teorema delle rette perpendicolari per ottenere 
+        l'equazione della retta perpendicolare allo sfrido.
+        \par \noindent Il programma applica vari \emph{fattori di traslazione} per poi calcolarne il profilo.
+        Nei profili trovati viene rilevata la parte dello sfrido e viene asportata, poi il profilo viene \textbf{approssimato ai bordi} e si calcola
+        lo \emph{spessore a metà altezza}, infine vengono calcolati spessore medio, differenza di spessore e deviazione standard
+        \par
         \noindent \rule{\linewidth}{.6pt} 
     \end{abstract}
     \thispagestyle{plain} 
     \section{Secondo metodo di Soluzione del problema}
-    \noindent Il secondo metodo di soluzione a differenza del primo non applica filtri all'immagine, in quanto potrebberò non venire applicati nel modo corretto oppure corrompere l'intergrità
+    \noindent Il secondo metodo di soluzione a differenza del primo non applica filtri all'immagine, in quanto potrebberò corrompere l'intergrità
     dei pixel dello sfrido, l'immagine viene solamente convertita in scala di grigi. Il procedimento di calcolo dello spessore dello sfrido parte prendendo tutti i valori dei pixel nella linea più alta 
-    dell'immagine e in quella più bassa. Grazie alla libreria \emph{\textbf{MatPlotLib}}\footnote[9]{\indent Libreria per la creazione di grafici per il linguaggio di programmazione Python} che permette di visionare grafici, si costruiscono due grafici che nell'asse delle ascisse i pixel e nell'asse delle ordinate
+    dell'immagine e in quella più bassa.Grazie alla libreria \emph{\textbf{MatPlotLib}}\footnote[9]{\indent Libreria per la creazione di grafici per il linguaggio di programmazione Python} che permette di visionare grafici, si costruiscono due grafici che nell'asse delle ascisse i pixel e nell'asse delle ordinate
     il corrispettivo valore in scala di grigi, così da ottenere il \textbf{profilo} di quella serie di pixel. Sfruttando questi profili il programma capisce dove si trova lo sfrido e trova in entrambi i profili
     il \emph{punto centrale}, come nel primo metodo si applica il \emph{sistema di equazioni} e viene calcolata l'equazione dello sfrido, viene riapplicato il \emph{teorema delle rette perpendicolari} e utilizzando un punto a metà altezza dell'immagine
     viene calcolata l'equazione della retta perpendicolare. Vengono poi utilizzati diversi \textbf{fattori di traslazione}\footnote[10]{\indent \'E un valore positivo o negativo che trasla/sposta in altezza la retta principale} così da avere le equazioni della stessa retta traslata in tutta l'altezza
     dell'immagine.\par
     \noindent Dopo aver ottenuto le equazioni delle rette, ulizzo quest'ultime per ottenere i valori di ogni pixel di quella retta e si riutilizza \emph{matplotlib} per costruire i grafici dei profili, 
-    per ogni profilo ottenuto viene rilevata la posizione dello sfrido e si ricostruisce il grafico del profilo solamente dello sfrido. Infine per ottenere lo spessore dello sfrido non viene calcolato nè nel punto più alto del bordo
+    per ogni profilo ottenuto viene rilevata la posizione dello sfrido e si ricostruisce il grafico del profilo solamente dello sfrido.\par
+    \pagebreak
+    \thispagestyle{plain}
+    \noindent
+    Infine per ottenere lo spessore dello sfrido non viene calcolato nè nel punto più alto del bordo
     nè nel punto più basso, si calcola dunque lo \emph{\textbf{Spessore a Metà Altezza}}\footnote[11]{\indent Viene calcolato lo spessore a metà altezza per ottenere un valore non troppo elevato per errore del bordo e non troppo basso per la differenza di spessore del fondo dello sfrido}, per fare questo quindi viene trovato il punto nei bordi in cui il valore del pixel cambia drasticamente
     questo punto viene poi approssimato al valore massimo, viene presa la metà di quel valore in entrambi i bordi e quindi si calcola lo \emph{spessore a metà altezza}.\par
-    \noindent In conclusione questo processo viene ripetuto per ogni profilo trovato e vengono poi calcolati lo spessore medio, la differenza di spessore e infine la deviazione standard
+    \noindent In conclusione questo processo viene ripetuto per ogni profilo trovato e vengono poi calcolati lo spessore medio, la differenza di spessore e infine la deviazione standard.
+    \section{GUI del Progetto}
+    \noindent La \emph{\textbf{GUI}}\footnote[12]{\indent Graphical User Interface} del progetto è stata sviluppata utilizzando la libreria \emph{\textbf{CustomTkinter}}\footnote[13]{\indent CustomTkinter is a python desktop UI-library based on Tkinter},
+    permette di scattare una foto, utilizzando una fotocamera esterna oppure quella intergrata se presente, che poi viene salvata nel progetto e visionata nell'interfaccia.
+    Quando si fa partire il programma questa foto viene utilizzata e l'interfaccia poi mostra i risultati numerici e l'immagine elaborata nei due diversi metodi di soluzione.
+    \section{Conclusioni Finali}
+    \noindent Il progetto sviluppato presenta due soluzioni, la prima dipende da come viene filtrata l'immagine, l'altra soluzione dipende principalmente dalla lastra.
+    Entrambe le soluzioni raggiungono un risultato che non sempre è corretto: i filtri usati nel primo metodo possono non filtrare l'immagine completamente e quindi compromettere 
+    il metodo di calcolo, quando la lastra presenta cambi di intensità e colore il secondo metodo potrebbe non dare un risultato corretto.
+    Alcune prove fatte in entrambi i metodi hanno dato buoni risultati e facendo un test con una fotocamera i risultati sono stati ottimi ed è stata calcolata la misura in millimetri 
+    di un pixel, circa due centesimi di millimetro.\par
+    \noindent Link Repository GitHub: 
+    \section{Esperienza PCTO}
+    \noindent L'esperiena PCTO è stata molto bella e soprattutto utile, mi ha permesso di entrare un po' più nell'ottica di come funziona un'azienda, ho capito come ci si pone difronte ad un problema reale
+    e come un'azienda si interfaccia con aziende esterne. Grazie a questa esperienza ho arricchito le mie conoscenze e conosciuto persone fantastiche.\par
+    \noindent Ringrazio: Federico Milan, Luca Malorzo, De Zuani Stefano e l'intero DIGI Hub per l'esperienza!
+
 \end{document}

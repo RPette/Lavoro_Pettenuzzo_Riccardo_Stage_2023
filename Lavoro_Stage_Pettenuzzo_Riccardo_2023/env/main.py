@@ -158,6 +158,7 @@ def Get_Standard_Deviation(width_list):
 def Get_Results():
     return results
 
+#image_path = r"imgs/photo.jpg"
 image_path = r"C:\Users\stage.upe4\Desktop\Stefano\grigia_ob_resized.jpg"
 #?check if the file to read is jpg (or something else) cause raw files have different way to be read
 #!controllo che il percorso del file contenga jpg (o altro), oppure cr2 dato che hanno modi diversi di lettura
